@@ -1,9 +1,14 @@
+import type { Metadata } from "next"
 import { LandingNavbar } from "@/components/layouts/LandingNavbar"
 import { Hero } from "@/components/sections/Hero"
 import { Activities } from "@/components/sections/Activities"
 import { AboutLanding } from "@/components/sections/AboutLanding"
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Dashboard - Certificate Manager",
+}
+
+export default function Page() {
   return (
     <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden">
       <LandingNavbar />
