@@ -13,7 +13,15 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden">
-      <AppHeader />
+      <AppHeader 
+        isLoggedIn={true}
+        user={{
+          name: "John Doe",
+          email: "john.doe@example.com",
+          avatar: "",
+          role: "Administrator"
+        }}
+      />
       <Hero />
       <main className="max-w-screen-xl mx-auto px-6 md:px-12 py-6">
 
