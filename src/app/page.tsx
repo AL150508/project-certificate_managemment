@@ -1,4 +1,4 @@
-import { LandingNavbar } from "@/components/layouts/LandingNavbar"
+import { AppHeader } from "@/components/layouts/AppHeader"
 import { Hero } from "@/components/sections/Hero"
 import { Activities } from "@/components/sections/Activities"
 import { AboutLanding } from "@/components/sections/AboutLanding"
@@ -6,7 +6,7 @@ import { AboutLanding } from "@/components/sections/AboutLanding"
 export default function Home() {
   return (
     <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden">
-      <LandingNavbar />
+      <AppHeader />
       <Hero />
       <Activities />
       <AboutLanding />

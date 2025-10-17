@@ -12,9 +12,9 @@ export function Hero() {
           transition={{ duration: 0.6 }}
           className="text-3xl md:text-5xl font-bold text-white"
         >
-          Ikuti Seminar & Training Online
+          Selamat datang di Certificate Manager
           <br />
-          Bersertifikat
+        
         </motion.h1>
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -22,7 +22,7 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mt-4 text-2xl md:text-4xl font-extrabold text-white"
         >
-          DENGAN PEMATERI PROFESIONAL
+         
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -30,16 +30,16 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="mt-6 text-[#AAAAAA]"
         >
-          Anda juga dapat menikmati software akuntansi online secara gratis di akuntanmu.com
+          Certificate Manager adalah platform pembuatan sertifikat pelatihan berbasis web yang memudahkan Anda
         </motion.p>
         <motion.a
           href="#activities"
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="inline-block mt-8 px-6 py-3 rounded-lg bg-[#2A7FFF] text-white font-medium hover:scale-[1.02] transition-all"
+          className="inline-block mt-8 px-6 py-3 rounded-lg bg-[#E50914] hover:bg-[#B1000E] text-white font-medium hover:scale-[1.02] transition-all"
         >
-          COBA SEKARANG
+          Import
         </motion.a>
       </div>
     </section>
