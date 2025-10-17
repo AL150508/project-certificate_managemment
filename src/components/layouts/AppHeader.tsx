@@ -10,19 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, Settings, LogOut, Shield } from "lucide-react"
+import { User, Settings, LogOut } from "lucide-react"
+import { useRoleLinks } from "@/components/layouts/NavLinks"
+import { RoleSwitcher } from "@/components/layouts/RoleSwitcher"
 
 type LinkItem = { href: string; label: string }
 
 export function AppHeader({
-  links = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/certificates", label: "Certificates" },
-    { href: "/members", label: "Members" },
-    { href: "/categories", label: "Categories" },
-    { href: "/import", label: "Import" },
-    { href: "/faq", label: "FAQ" },
-  ],
+  links,
   loginText = "Login / Daftar",
   isLoggedIn = false,
   user = {
@@ -42,6 +37,8 @@ export function AppHeader({
     role: string
   }
 }) {
+  const roleLinks = useRoleLinks()
+  const navLinks = links ?? roleLinks
   return (
     <header className="w-full fixed top-0 inset-x-0 z-30 bg-black/80 backdrop-blur border-b border-[#1a1a1a]">
       <div className="max-w-screen-xl mx-auto h-16 px-4 md:px-6 flex items-center justify-between">
@@ -49,7 +46,7 @@ export function AppHeader({
           Certificate <span className="text-[#E50914]">Manager</span>
         </div>
         <nav className="hidden md:flex items-center gap-6 text-white/80">
-          {links.map((l) => (
+          {navLinks.map((l) => (
             <a key={l.href} href={l.href} className="hover:text-white">
               {l.label}
             </a>
@@ -58,10 +55,7 @@ export function AppHeader({
         <div className="flex items-center gap-2">
           {isLoggedIn ? (
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline text-xs px-2 py-1 rounded-md bg-[#111] text-white/80 border border-[#1f1f1f]">
-                <Shield className="inline w-3 h-3 mr-1" />
-                <span className="text-white font-medium">{user.role}</span>
-              </span>
+              <RoleSwitcher />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">

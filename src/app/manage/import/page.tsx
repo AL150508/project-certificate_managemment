@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 import { AppHeader } from "@/components/layouts/AppHeader"
-import ImportClient from "@/app/manage/import/ImportClient"
+import ImportClient from "./ImportClient"
 
 export const metadata: Metadata = {
-  title: "Import - Certificate Manager",
+  title: "Import Data - Certificate Manager",
 }
 
 export default function ImportPage() {

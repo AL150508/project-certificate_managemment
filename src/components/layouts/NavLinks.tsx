@@ -1,0 +1,39 @@
+"use client"
+
+import { useMemo } from "react"
+import { useRole } from "@/context/RoleContext"
+
+type LinkItem = { href: string; label: string }
+
+const AdminMenu: LinkItem[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/certificates", label: "Certificates" },
+  { href: "/members", label: "Members" },
+  { href: "/categories", label: "Categories" },
+  { href: "/import", label: "Import" },
+  { href: "/faq", label: "FAQ" },
+]
+
+const TeamMenu: LinkItem[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/certificates", label: "Certificates" },
+  { href: "/members", label: "Members" },
+  { href: "/categories", label: "Categories" },
+  { href: "/faq", label: "FAQ" },
+]
+
+const PublicMenu: LinkItem[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/faq", label: "FAQ" },
+]
+
+export function useRoleLinks(): LinkItem[] {
+  const { role } = useRole()
+  return useMemo(() => {
+    if (role === "admin") return AdminMenu
+    if (role === "team") return TeamMenu
+    return PublicMenu
+  }, [role])
+}
+
+
