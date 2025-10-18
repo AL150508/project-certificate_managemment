@@ -21,7 +21,6 @@ export function AppHeader({
     { href: "/certificate/editor", label: "Certificate Editor" },
     { href: "/members", label: "Members" },
     { href: "/categories", label: "Categories" },
-    { href: "/import", label: "Import" },
     { href: "/faq", label: "FAQ" },
   ],
   loginText = "Login / Daftar",
