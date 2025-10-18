@@ -18,6 +18,7 @@ export function AppHeader({
   links = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/certificates", label: "Certificates" },
+    { href: "/certificate/editor", label: "Certificate Editor" },
     { href: "/members", label: "Members" },
     { href: "/categories", label: "Categories" },
     { href: "/import", label: "Import" },

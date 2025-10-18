@@ -1,17 +1,20 @@
 "use client"
 
-import { AppHeader } from "@/components/layouts/AppHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useUser } from "@/contexts/UserContext"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [role, setRole] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { login } = useUser()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -19,6 +22,13 @@ export default function LoginPage() {
     
     // Simulate login process
     setTimeout(() => {
+      // Login with user data
+      login({
+        name: email.split('@')[0], // Use email prefix as name
+        email: email,
+        role: role as 'admin' | 'team' | 'public'
+      })
+      
       setIsLoading(false)
       // Redirect to dashboard after successful login
       router.push('/dashboard')
@@ -26,9 +36,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden">
-      <AppHeader isLoggedIn={false} />
-      <main className="max-w-screen-xl mx-auto px-6 md:px-12 py-24">
+    <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden flex items-center justify-center">
+      <main className="w-full max-w-md px-6">
         <div className="max-w-md mx-auto">
           <Card className="bg-[#1A1A1A] border-[#333333]">
             <CardHeader className="text-center">
@@ -39,6 +48,21 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="role" className="text-sm font-medium text-white">
+                    Masuk sebagai
+                  </label>
+                  <Select value={role} onValueChange={setRole} required>
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444444] text-white focus:border-blue-500">
+                      <SelectValue placeholder="Pilih peran Anda" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#2A2A2A] border-[#444444]">
+                      <SelectItem value="admin" className="text-white hover:bg-[#3A3A3A]">Admin</SelectItem>
+                      <SelectItem value="team" className="text-white hover:bg-[#3A3A3A]">Team</SelectItem>
+                      <SelectItem value="public" className="text-white hover:bg-[#3A3A3A]">Publik</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-white">
                     Email
