@@ -130,7 +130,7 @@ export default function CategoriesClient() {
               />
             </SheetContent>
           </Sheet>
-          <Button variant="outline" className="border-[#333] text-white" onClick={() => fetchAll()}>Refresh 🔄</Button>
+          <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => fetchAll()}>Refresh 🔄</Button>
           <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v as any); setPage(1) }}>
             <SelectTrigger className="w-40 bg-[#111] text-white border-[#333]"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent className="bg-[#0A0A0A] text-white border-[#333]">
@@ -169,8 +169,8 @@ export default function CategoriesClient() {
                   <span className={c.is_active ? 'text-[#22c55e]' : 'text-gray-400'}>{c.is_active ? 'Active' : 'Inactive'}</span>
                 </TableCell>
                 <TableCell className="space-x-2">
-                  <Button variant="outline" className="border-[#333] text-white" onClick={() => { setEditing(c as any); setOpenForm(true) }}>Edit</Button>
-                  <Button variant="outline" className="border-[#333] text-white" onClick={() => handleDelete(c)}>Delete</Button>
+                  <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => { setEditing(c as any); setOpenForm(true) }}>Edit</Button>
+                  <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => handleDelete(c)}>Delete</Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -181,8 +181,8 @@ export default function CategoriesClient() {
       <div className="flex items-center justify-between mt-4 text-white">
         <span className="text-sm text-white/70">Page {page} of {totalPages}</span>
         <div className="space-x-2">
-          <Button variant="outline" className="border-[#333] text-white" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p-1))}>Prev</Button>
-          <Button variant="outline" className="border-[#333] text-white" disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p+1))}>Next</Button>
+          <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p-1))}>Prev</Button>
+          <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p+1))}>Next</Button>
         </div>
       </div>
 

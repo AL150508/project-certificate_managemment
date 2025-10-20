@@ -14,17 +14,17 @@ const items = [
 
 export function AdminSummaryCards() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((item) => (
-        <Card key={item.title} className="bg-[#111] border border-[#E50914]/20 p-5 hover:scale-[1.02] transition-all">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-md bg-[#1a1a1a]">
-              <item.icon className="h-5 w-5 text-[#E50914]" />
+        <Card key={item.title} className="rounded-xl border border-zinc-800/80 bg-[rgba(16,16,22,0.8)] backdrop-blur-sm p-5 transition-transform hover:-translate-y-0.5">
+          <div className="flex items-start gap-4">
+            <div className="p-2 rounded-md bg-zinc-900/70 ring-1 ring-zinc-800">
+              <item.icon className="h-5 w-5 text-rose-400" />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-gray-400">{item.title}</p>
-              <p className="text-2xl font-semibold text-white">{item.value}</p>
-              <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
+              <p className="text-sm text-zinc-400">{item.title}</p>
+              <p className="text-3xl font-semibold text-zinc-100 tracking-tight">{item.value}</p>
+              <p className="text-xs text-zinc-500 mt-1">{item.desc}</p>
             </div>
           </div>
         </Card>

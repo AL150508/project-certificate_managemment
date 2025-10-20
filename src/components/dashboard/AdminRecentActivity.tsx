@@ -13,15 +13,15 @@ const items = [
 
 export function AdminRecentActivity() {
   return (
-    <Card className="bg-[#111] border border-[#1f1f1f] p-5">
-      <h3 className="text-white text-lg font-semibold mb-3">Aktivitas Terbaru</h3>
+    <Card className="rounded-xl border border-zinc-800/80 bg-[rgba(16,16,22,0.8)] backdrop-blur-sm p-5">
+      <h3 className="text-zinc-100 text-lg font-semibold mb-3">Aktivitas Terbaru</h3>
       <ul className="max-h-[260px] overflow-auto pr-2 space-y-3">
         {items.map((i, idx) => (
           <li key={idx} className="flex items-start gap-3">
-            <div className="p-2 rounded-md bg-[#1a1a1a]"><i.icon className="h-4 w-4 text-[#E50914]" /></div>
+            <div className="p-2 rounded-md bg-zinc-900/70 ring-1 ring-zinc-800"><i.icon className="h-4 w-4 text-rose-400" /></div>
             <div>
-              <p className="text-sm text-white">{i.text}</p>
-              <p className="text-xs text-[#AAAAAA] mt-1">{i.date}</p>
+              <p className="text-sm text-zinc-100">{i.text}</p>
+              <p className="text-xs text-zinc-500 mt-1">{i.date}</p>
             </div>
           </li>
         ))}

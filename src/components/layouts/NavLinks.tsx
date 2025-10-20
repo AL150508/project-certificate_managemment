@@ -6,19 +6,20 @@ import { useRole } from "@/context/RoleContext"
 type LinkItem = { href: string; label: string }
 
 const AdminMenu: LinkItem[] = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/certificates", label: "Certificates" },
-  { href: "/members", label: "Members" },
-  { href: "/categories", label: "Categories" },
-  { href: "/import", label: "Import" },
+  { href: "/admin/dashboard", label: "Dashboard" },
+  { href: "/admin/certificates", label: "Certificates" },
+  { href: "/admin/templates", label: "Templates" },
+  { href: "/admin/members", label: "Members" },
+  { href: "/admin/categories", label: "Categories" },
   { href: "/faq", label: "FAQ" },
 ]
 
 const TeamMenu: LinkItem[] = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/team/dashboard", label: "Dashboard" },
   { href: "/certificates", label: "Certificates" },
-  { href: "/members", label: "Members" },
-  { href: "/categories", label: "Categories" },
+  { href: "/admin/templates", label: "Templates" },
+  { href: "/admin/members", label: "Members" },
+  { href: "/admin/categories", label: "Categories" },
   { href: "/faq", label: "FAQ" },
 ]
 

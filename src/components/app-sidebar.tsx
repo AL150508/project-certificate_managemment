@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { LayoutDashboard, FileText, FolderKanban, Users, Award, Import, Settings } from "lucide-react"
+import { LayoutDashboard, FileText, FolderKanban, Users, Award, Settings } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -23,15 +23,14 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
-    { title: "Dashboard", url: "#", icon: LayoutDashboard, isActive: true },
-    { title: "Template Sertifikat", url: "#", icon: FileText },
-    { title: "Kategori", url: "#", icon: FolderKanban },
-    { title: "Member", url: "#", icon: Users },
-    { title: "Sertifikat", url: "#", icon: Award },
-    { title: "Impor Data", url: "#", icon: Import },
+    { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard, isActive: true },
+    { title: "Template Sertifikat", url: "/admin/templates", icon: FileText },
+    { title: "Kategori", url: "/manage/categories", icon: FolderKanban },
+    { title: "Member", url: "/manage/members", icon: Users },
+    { title: "Sertifikat", url: "/admin/certificates", icon: Award },
   ],
   navSecondary: [
-    { title: "Pengaturan", url: "#", icon: Settings },
+    { title: "Pengaturan", url: "/settings", icon: Settings },
   ],
 }
 

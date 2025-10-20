@@ -29,23 +29,23 @@ const PIE_COLORS = ["#E50914", "#b1000e", "#333", "#666"]
 
 export function AdminAnalytics() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Card className="bg-[#0A0A0A] border border-[#1f1f1f] p-5">
-        <h3 className="text-white text-lg font-semibold mb-3">Certificate Issued per Month</h3>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card className="rounded-xl border border-zinc-800/80 bg-[rgba(16,16,22,0.8)] backdrop-blur-sm p-5">
+        <h3 className="text-zinc-100 text-lg font-semibold mb-3">Certificate Issued Over Time</h3>
         <div className="w-full h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthly}>
-              <CartesianGrid stroke="#333" vertical={false} />
-              <XAxis dataKey="name" stroke="#aaa" tickLine={false} axisLine={{ stroke: "#333" }} />
-              <YAxis stroke="#aaa" tickLine={false} axisLine={{ stroke: "#333" }} />
-              <Tooltip contentStyle={{ background: "#111", border: "1px solid #1f1f1f", color: "#fff" }} cursor={{ fill: "#111", opacity: 0.2 }} />
-              <Bar dataKey="total" fill="#E50914" radius={[4, 4, 0, 0]} />
+              <CartesianGrid stroke="#232329" vertical={false} />
+              <XAxis dataKey="name" stroke="#A1A1AA" tickLine={false} axisLine={{ stroke: "#232329" }} />
+              <YAxis stroke="#A1A1AA" tickLine={false} axisLine={{ stroke: "#232329" }} />
+              <Tooltip contentStyle={{ background: "#0f0f14", border: "1px solid #232329", color: "#fff" }} cursor={{ fill: "#0f0f14", opacity: 0.2 }} />
+              <Bar dataKey="total" fill="#f43f5e" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </Card>
-      <Card className="bg-[#0A0A0A] border border-[#1f1f1f] p-5">
-        <h3 className="text-white text-lg font-semibold mb-3">Certificate by Category</h3>
+      <Card className="rounded-xl border border-zinc-800/80 bg-[rgba(16,16,22,0.8)] backdrop-blur-sm p-5">
+        <h3 className="text-zinc-100 text-lg font-semibold mb-3">Certificate by Category</h3>
         <div className="w-full h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -55,7 +55,7 @@ export function AdminAnalytics() {
                 ))}
               </Pie>
               <Legend />
-              <Tooltip contentStyle={{ background: "#111", border: "1px solid #1f1f1f", color: "#fff" }} />
+              <Tooltip contentStyle={{ background: "#0f0f14", border: "1px solid #232329", color: "#fff" }} />
             </PieChart>
           </ResponsiveContainer>
         </div>

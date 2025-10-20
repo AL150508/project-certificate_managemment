@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as XLSX from "xlsx"
 import { supabase } from "@/lib/supabase"
@@ -100,7 +100,7 @@ export default function ImportClient() {
           <p className="text-[#AAAAAA]">Unggah file Excel untuk menambahkan data baru ke sistem.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-[#333] text-white" onClick={() => loadLogs()}>Lihat Riwayat Import</Button>
+          <Button variant="outline" className="border-[#333] text-white hover:bg-[#333] hover:text-white" onClick={() => loadLogs()}>Lihat Riwayat Import</Button>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ export default function ImportClient() {
             </div>
             <div className="flex items-end gap-2">
               <Button type="submit" disabled={uploading} className="bg-[#dc2626] hover:bg-[#b91c1c] text-white">{uploading ? 'Processing…' : 'Upload & Import'}</Button>
-              <Button type="button" variant="outline" className="border-[#333] text-white" onClick={() => { const t = (watch("importType") as ImportType) || 'member'; downloadTemplate(t) }}>Download Template Excel</Button>
+              <Button type="button" variant="outline" className="border-[#333] text-white hover:bg-[#333] hover:text-white" onClick={() => { const t = (watch("importType") as ImportType) || 'member'; downloadTemplate(t) }}>Download Template Excel</Button>
             </div>
           </div>
         </form>

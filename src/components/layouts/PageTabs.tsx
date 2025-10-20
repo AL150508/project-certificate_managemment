@@ -9,7 +9,6 @@ const tabs = [
   { label: "Kategori", href: "/categories" },
   { label: "Member", href: "/members" },
   { label: "Sertifikat", href: "/certificates" },
-  { label: "Impor Data", href: "/import" },
   { label: "Pengaturan", href: "/settings" },
 ]
 

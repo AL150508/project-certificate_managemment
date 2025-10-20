@@ -5,12 +5,11 @@ import { motion, AnimatePresence } from "framer-motion"
 import { usePathname, useRouter } from "next/navigation"
 
 const links = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Template Sertifikat", href: "/templates" },
-  { label: "Kategori", href: "/categories" },
-  { label: "Member", href: "/members" },
-  { label: "Sertifikat", href: "/certificates" },
-  { label: "Impor Data", href: "/import" },
+  { label: "Dashboard", href: "/admin/dashboard" },
+  { label: "Template Sertifikat", href: "/admin/templates" },
+  { label: "Kategori", href: "/manage/categories" },
+  { label: "Member", href: "/manage/members" },
+  { label: "Sertifikat", href: "/admin/certificates" },
   { label: "Pengaturan", href: "/settings" },
 ]
 

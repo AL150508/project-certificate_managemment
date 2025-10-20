@@ -1,0 +1,12 @@
+[
+  {
+    "email": "admin@gmail.com",
+    "status": "created",
+    "auth_id": "3c3ca5e1-472b-4f22-940e-93fe40517918"
+  },
+  {
+    "email": "team@gmail.com",
+    "status": "created",
+    "auth_id": "ad260a57-d3b2-4741-997c-69661d59a313"
+  }
+]
