@@ -32,8 +32,8 @@ async function renderPdfAndPng(html: string, width: number, height: number) {
   return { pdfBuffer, pngBuffer }
 }
 
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
-  const id = params.id
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
     // Load certificate + template
     const { data: cert, error: certErr } = await supabase

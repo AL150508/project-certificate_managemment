@@ -10,12 +10,14 @@ export const metadata: Metadata = {
 
 async function findCertificate(param: string) {
   // try by verification_code first
-  let { data, error } = await supabase
+  const { data: initialData, error: initialError } = await supabase
     .from("certificates")
     .select("id, certificate_number, verification_code, member_id, category_id, issue_date, status, pdf_url, png_url")
     .eq("verification_code", param)
     .maybeSingle()
-  if (error) throw error
+  if (initialError) throw initialError
+  
+  let data = initialData
   if (!data) {
     const byNumber = await supabase
       .from("certificates")

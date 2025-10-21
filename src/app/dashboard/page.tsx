@@ -15,15 +15,7 @@ export default function Page() {
   // we'll use client hook via wrapper to avoid making this a client component
   return (
     <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden">
-      <AppHeader 
-        isLoggedIn={true}
-        user={{
-          name: "John Doe",
-          email: "john.doe@example.com",
-          avatar: "",
-          role: "Administrator"
-        }}
-      />
+      <AppHeader />
       <ClientHero />
       <main className="max-w-screen-xl mx-auto px-6 md:px-12 py-6">
 

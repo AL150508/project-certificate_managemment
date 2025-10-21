@@ -135,7 +135,7 @@ export default function TextTransformBox({
     })
   }
 
-  const handleDeleteClick = (elementId: string, e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleDeleteClick = (elementId: string, e: Konva.KonvaEventObject<Event>) => {
     e.cancelBubble = true
     onElementDelete(elementId)
     onElementSelect(null)

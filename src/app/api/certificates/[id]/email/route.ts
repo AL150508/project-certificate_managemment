@@ -16,8 +16,8 @@ async function getTransporter() {
   return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } })
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const id = params.id
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   try {
     const { data: cert, error } = await supabase
       .from("certificates")
@@ -106,8 +106,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const msg = e instanceof Error ? e.message : "Failed"
     // try logging failure if cert known
     try {
-      const id = params.id
-      await supabase.from("email_logs").insert({ certificate_id: id, recipient_email: null, subject: "(auto)", status: "failed", error_message: msg })
+      const { id: certId } = await params
+      await supabase.from("email_logs").insert({ certificate_id: certId, recipient_email: null, subject: "(auto)", status: "failed", error_message: msg })
     } catch {}
     return NextResponse.json({ error: msg }, { status: 500 })
   }

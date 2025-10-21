@@ -165,29 +165,33 @@ export function useTemplateList(options: UseTemplateListOptions = {}) {
   const templates = useMemo(() => {
     setIsLoading(true)
     
-    let configs = Object.values(TemplateConfigManager.getStats())
+    // Start with all configs or filter by category
+    let configs = options.category 
+      ? TemplateConfigManager.getConfigsByCategory(options.category)
+      : Object.values(TemplateConfigManager.getStats()).length > 0
+        ? TemplateConfigManager.getConfigsByCategory('') // This will return empty, so we need a different approach
+        : []
     
-    // Filter by category
-    if (options.category) {
-      configs = TemplateConfigManager.getConfigsByCategory(options.category)
+    // If no category filter, get all by checking each available category
+    if (!options.category) {
+      const categories = TemplateConfigManager.getAvailableCategories()
+      configs = categories.flatMap(cat => TemplateConfigManager.getConfigsByCategory(cat))
     }
     
     // Filter by orientation
     if (options.orientation) {
       const orientationConfigs = TemplateConfigManager.getConfigsByOrientation(options.orientation)
-      configs = options.category 
-        ? configs.filter(c => orientationConfigs.some(oc => oc.id === c.id))
-        : orientationConfigs
+      configs = configs.filter((c: TemplateConfig) => orientationConfigs.some(oc => oc.id === c.id))
     }
     
     // Filter by search query
     if (options.searchQuery) {
       const query = options.searchQuery.toLowerCase()
-      configs = configs.filter(config => 
+      configs = configs.filter((config: TemplateConfig) => 
         config.name.toLowerCase().includes(query) ||
         config.description.toLowerCase().includes(query) ||
         config.category.toLowerCase().includes(query) ||
-        (config.metadata.tags && config.metadata.tags.some(tag => 
+        (config.metadata.tags && config.metadata.tags.some((tag: string) => 
           tag.toLowerCase().includes(query)
         ))
       )
