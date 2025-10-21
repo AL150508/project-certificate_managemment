@@ -1,6 +1,7 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
+import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react"
+import { LucideIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +18,8 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: Icon
+    icon?: LucideIcon
+    isActive?: boolean
   }[]
 }) {
   return (

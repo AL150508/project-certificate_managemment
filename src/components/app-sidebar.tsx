@@ -49,10 +49,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="[--sidebar-background:#111] [--sidebar-foreground:#fff]">
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        <NavMain items={data.navMain as any} />
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        <NavSecondary items={data.navSecondary as any} />
+        <NavMain items={data.navMain} />
+        <NavSecondary items={data.navSecondary} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

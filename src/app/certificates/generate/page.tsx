@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,7 +37,7 @@ interface Category {
   name: string
 }
 
-export default function GenerateCertificatePage() {
+function GenerateCertificatePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const templateId = searchParams.get('templateId')
@@ -337,5 +337,17 @@ export default function GenerateCertificatePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function GenerateCertificatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <GenerateCertificatePageContent />
+    </Suspense>
   )
 }
