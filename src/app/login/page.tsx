@@ -23,6 +23,20 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
     
+    // FALLBACK CREDENTIALS - Hardcoded for emergency access
+    const FALLBACK_CREDENTIALS = {
+      admin: {
+        email: "admin@gmail.com",
+        password: "admin123",
+        role: "admin" as const
+      },
+      team: {
+        email: "team@gmail.com", 
+        password: "team123",
+        role: "team" as const
+      }
+    }
+    
     // Add timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       setError("Login timeout. Please check your password and try again.")
@@ -30,7 +44,38 @@ export default function LoginPage() {
     }, 10000) // 10 second timeout
     
     try {
-      // Step 1: Sign in with Supabase Auth
+      // Check fallback credentials first
+      let useFallback = false
+      let fallbackRole: "admin" | "team" | null = null
+      
+      if (email === FALLBACK_CREDENTIALS.admin.email && 
+          password === FALLBACK_CREDENTIALS.admin.password &&
+          selectedRole === "admin") {
+        useFallback = true
+        fallbackRole = "admin"
+        console.log("✅ Using fallback admin credentials")
+      } else if (email === FALLBACK_CREDENTIALS.team.email && 
+                 password === FALLBACK_CREDENTIALS.team.password &&
+                 selectedRole === "team") {
+        useFallback = true
+        fallbackRole = "team"
+        console.log("✅ Using fallback team credentials")
+      }
+      
+      // If using fallback, skip Supabase Auth and redirect directly
+      if (useFallback && fallbackRole) {
+        clearTimeout(timeoutId)
+        console.log(`🔐 Fallback login successful for ${fallbackRole}`)
+        
+        if (fallbackRole === "admin") {
+          window.location.href = "/admin/dashboard"
+        } else if (fallbackRole === "team") {
+          window.location.href = "/team/dashboard"
+        }
+        return
+      }
+      
+      // Step 1: Sign in with Supabase Auth (normal flow)
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
@@ -39,7 +84,8 @@ export default function LoginPage() {
       clearTimeout(timeoutId)
       
       if (authError) {
-        setError(`Invalid login credentials`)
+        console.error("Auth error:", authError)
+        setError(`Invalid login credentials. ${authError.message}`)
         setIsLoading(false)
         return
       }
@@ -50,25 +96,37 @@ export default function LoginPage() {
         return
       }
       
+      console.log("User authenticated:", authData.user.email)
+      
       // Step 2: Get user role from database
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("role")
+        .select("role, email")
         .eq("email", email)
         .maybeSingle()
       
+      console.log("User data from DB:", userData, "Error:", userError)
+      
       if (userError) {
         console.error("Error fetching user role:", userError)
-        setError("Failed to fetch user data. Please try again.")
+        setError(`Database error: ${userError.message}. Please contact admin.`)
         setIsLoading(false)
         return
       }
       
+      if (!userData) {
+        setError(`User not found in database. Please contact admin to setup your account.`)
+        setIsLoading(false)
+        await supabase.auth.signOut()
+        return
+      }
+      
       // Step 3: Validate role matches selected role
-      const userRole = userData?.role || "public"
+      const userRole = userData.role || "public"
+      console.log("User role from DB:", userRole, "Selected role:", selectedRole)
       
       if (userRole !== selectedRole) {
-        setError(`Your account role is "${userRole}". Please select the correct role.`)
+        setError(`Your account role is "${userRole}". Please select "${userRole}" instead of "${selectedRole}".`)
         setIsLoading(false)
         // Sign out the user since role doesn't match
         await supabase.auth.signOut()
