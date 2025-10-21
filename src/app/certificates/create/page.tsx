@@ -26,11 +26,17 @@ export default function CreateCertificatePage() {
           supabase.from("certificate_categories").select("id, name").order("name"),
           supabase.from("certificate_templates").select("id, name, fields, layout, background_url").order("name"),
         ])
-        setMembers(((membersResp.data ?? []) as any[]).map(m => ({ id: m.id, name: m.name, email: m.email ?? null })))
-        setCategories(((categoriesResp.data ?? []) as any[]).map(c => ({ id: c.id, name: c.name })))
-        setTemplates(((templatesResp.data ?? []) as any[]).map(t => ({ id: t.id, name: t.name, fields: t.fields ?? [], layout: t.layout ?? null, background_url: t.background_url ?? null })))
-      } catch (e: any) {
-        toast.error(e.message ?? "Load failed")
+        setMembers((membersResp.data ?? []).map((m: { id: string; name: string; email?: string | null }) => ({ id: m.id, name: m.name, email: m.email ?? null })))
+        setCategories((categoriesResp.data ?? []).map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })))
+        setTemplates((templatesResp.data ?? []).map((t: { id: string; name: string; fields?: TemplateField[]; layout?: LayoutSnapshot | null; background_url?: string | null }) => ({ 
+          id: t.id, 
+          name: t.name, 
+          fields: (t.fields ?? []) as TemplateField[], 
+          layout: (t.layout ?? null) as LayoutSnapshot | null, 
+          background_url: t.background_url ?? null 
+        })))
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Load failed")
       }
     })()
   }, [])
@@ -39,8 +45,8 @@ export default function CreateCertificatePage() {
   useEffect(() => {
     const tpl = templates.find(t => t.id === picking.templateId)
     if (!tpl) return
-    const layout: LayoutSnapshot = tpl.layout ?? { width: 1200, height: 850, orientation: "landscape", fields: (tpl.fields ?? []).map(f => ({ ...f })) }
-    ;(layout as any).background_url = tpl.background_url ?? null
+    const layout: LayoutSnapshot & { background_url?: string | null } = tpl.layout ?? { width: 1200, height: 850, orientation: "landscape", fields: (tpl.fields ?? []).map(f => ({ ...f })) }
+    layout.background_url = tpl.background_url ?? null
     const values: Record<string, string> = {}
     if (picking.memberId) {
       const m = members.find(x => x.id === picking.memberId)
@@ -79,7 +85,7 @@ export default function CreateCertificatePage() {
           layout: snap.layout,
         }).select("id").single()
         if (error) throw error
-        setCurrentCertId((data as any).id)
+        setCurrentCertId((data as { id: string }).id)
       } else {
         const { error } = await supabase.from("certificates").update({
           member_id: picking.memberId ?? null,
@@ -92,8 +98,8 @@ export default function CreateCertificatePage() {
         if (error) throw error
       }
       toast.success("Saved draft")
-    } catch (e: any) {
-      toast.error(e.message ?? "Save failed")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Save failed")
     }
   }
 
@@ -107,8 +113,8 @@ export default function CreateCertificatePage() {
       const res = await fetch(`/api/certificates/${id}/generate`, { method: 'POST' })
       if (!res.ok) throw new Error(await res.text())
       toast.success("Generated")
-    } catch (e: any) {
-      toast.error(e.message ?? "Generate failed")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Generate failed")
     }
   }
 

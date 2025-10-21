@@ -79,7 +79,7 @@ export default function FAQClient() {
             onChange={(e) => setQuery(e.target.value)}
             className="bg-[#111] text-white border-[#333] md:col-span-2"
           />
-          <Select value={category} onValueChange={(v) => setCategory(v as any)}>
+          <Select value={category} onValueChange={(v) => setCategory(v as 'all' | 'general' | 'templates' | 'certificates' | 'members' | 'technical')}>
             <SelectTrigger className="bg-[#111] text-white border-[#333]">
               <SelectValue placeholder="Filter Kategori" />
             </SelectTrigger>

@@ -4,14 +4,25 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
+interface DebugTemplate {
+  id: string
+  name: string
+  orientation?: string
+  category_id?: string
+  image_url?: string
+  created_at?: string
+}
+
 export default function TemplatesDebugPage() {
-  const [templates, setTemplates] = useState<any[]>([])
+  const [templates, setTemplates] = useState<DebugTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadTemplates()
   }, [])
+
+  // Suppress exhaustive deps warning - loadTemplates is stable
 
   const loadTemplates = async () => {
     try {
@@ -67,7 +78,7 @@ export default function TemplatesDebugPage() {
       setTemplates(simpleData || [])
     } catch (err) {
       console.error('❌ Debug error:', err)
-      setError(`Debug error: ${err}`)
+      setError(`Debug error: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setLoading(false)
     }

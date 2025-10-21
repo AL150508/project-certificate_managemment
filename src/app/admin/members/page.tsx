@@ -110,9 +110,9 @@ export default function MembersPage() {
       resetForm()
       setOpenDialog(false)
       fetchMembers()
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving member:", error)
-      toast.error(error.message || "Failed to save member")
+      toast.error(error instanceof Error ? error.message : "Failed to save member")
     }
   }
 
@@ -135,9 +135,9 @@ export default function MembersPage() {
       console.log("✅ Member deleted successfully")
       toast.success("Member deleted successfully")
       fetchMembers()
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting member:", error)
-      toast.error(error.message || "Failed to delete member")
+      toast.error(error instanceof Error ? error.message : "Failed to delete member")
     }
   }
 

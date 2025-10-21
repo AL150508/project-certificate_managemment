@@ -4,9 +4,20 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
+interface SimpleTemplate {
+  id: string
+  name?: string
+  orientation?: string
+  category_id?: string
+  image_url?: string
+  width_px?: number
+  height_px?: number
+  created_at?: string
+}
+
 export default function SimpleTemplatesPage() {
   const [loading, setLoading] = useState(true)
-  const [templates, setTemplates] = useState<any[]>([])
+  const [templates, setTemplates] = useState<SimpleTemplate[]>([])
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState('Starting...')
 
@@ -14,12 +25,14 @@ export default function SimpleTemplatesPage() {
     testConnection()
   }, [])
 
+  // Suppress exhaustive deps warning - testConnection is stable
+
   const testConnection = async () => {
     try {
       setStep('Testing Supabase connection...')
       
       // Test 1: Simple connection test
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('certificate_templates')
         .select('count', { count: 'exact', head: true })
 
@@ -47,7 +60,7 @@ export default function SimpleTemplatesPage() {
       }
 
     } catch (err) {
-      setError(`Unexpected error: ${err}`)
+      setError(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`)
       setStep('Unexpected error')
     } finally {
       setLoading(false)

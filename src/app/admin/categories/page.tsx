@@ -108,9 +108,9 @@ export default function CategoriesPage() {
       resetForm()
       setOpenDialog(false)
       fetchCategories()
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving category:", error)
-      toast.error(error.message || "Failed to save category")
+      toast.error(error instanceof Error ? error.message : "Failed to save category")
     }
   }
 
@@ -133,9 +133,9 @@ export default function CategoriesPage() {
       console.log("✅ Category deleted successfully")
       toast.success("Category deleted successfully")
       fetchCategories()
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting category:", error)
-      toast.error(error.message || "Failed to delete category")
+      toast.error(error instanceof Error ? error.message : "Failed to delete category")
     }
   }
 

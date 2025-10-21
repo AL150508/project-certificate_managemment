@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Stage, Layer, Image as KonvaImage, Text as KonvaText, Transformer } from "react-konva"
+import Konva from "konva"
 
 // Simple image loader hook (avoid installing extra deps)
 function useImg(src?: string) {
@@ -51,8 +52,8 @@ export default function TemplateEditorPage() {
   const [tpl, setTpl] = useState<TemplateRow | null>(null)
   const [fields, setFields] = useState<TemplateField[]>([])
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const trRef = useRef<any>(null)
-  const stageRef = useRef<any>(null)
+  const trRef = useRef<Konva.Transformer | null>(null)
+  const stageRef = useRef<Konva.Stage | null>(null)
   const [previewDataUrl, setPreviewDataUrl] = useState<string>("")
   const grid = 10
   const fontList = ["Poppins","Roboto","Open Sans","Montserrat","Lato","Inter"]
@@ -81,8 +82,8 @@ export default function TemplateEditorPage() {
         }
         setTpl(row)
         setFields(row.fields ?? [])
-      } catch (e: any) {
-        toast.error(e.message ?? "Failed to load template")
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load template")
       } finally {
         setLoading(false)
       }
@@ -154,8 +155,8 @@ export default function TemplateEditorPage() {
       if (up.error) throw up.error
       const pub = supabase.storage.from("certificates").getPublicUrl(path)
       await supabase.from("certificate_templates").update({ preview_url: pub.data.publicUrl }).eq("id", tpl.id)
-    } catch (err: any) {
-      console.warn("Upload preview failed", err?.message)
+    } catch (err) {
+      console.warn("Upload preview failed", err instanceof Error ? err.message : String(err))
     }
   }
 
@@ -223,7 +224,7 @@ export default function TemplateEditorPage() {
                   </div>
                   <div>
                     <label className="text-xs text-white/60">Align</label>
-                    <Select value={selected.align ?? "center"} onValueChange={(v) => setFields((arr) => arr.map((f) => f.key === selected.key ? { ...f, align: v as any } : f))}>
+                    <Select value={selected.align ?? "center"} onValueChange={(v) => setFields((arr) => arr.map((f) => f.key === selected.key ? { ...f, align: v as 'left' | 'center' | 'right' } : f))}>
                       <SelectTrigger className="bg-[#111] text-white border-[#333] h-8"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#0A0A0A] text-white border-[#333]">
                         <SelectItem value="left">Left</SelectItem>

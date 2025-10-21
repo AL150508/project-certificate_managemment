@@ -7,16 +7,23 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { ArrowLeft, Download, Save } from 'lucide-react'
+import { ArrowLeft, Save } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+
+interface TemplateField {
+  id: string
+  type: string
+  placeholder?: string
+  required?: boolean
+}
 
 interface TemplateData {
   templateId: string
   templateName: string
   orientation: 'portrait' | 'landscape'
-  layoutData: any[]
-  fields: any[]
+  layoutData: unknown[]
+  fields: TemplateField[]
 }
 
 interface Member {
@@ -46,6 +53,7 @@ export default function GenerateCertificatePage() {
 
   useEffect(() => {
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId])
 
   const loadData = async () => {
@@ -275,7 +283,7 @@ export default function GenerateCertificatePage() {
             {templateData.fields && templateData.fields.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-lg font-medium mb-4">Certificate Fields</h3>
-                {templateData.fields.map((field: any) => (
+                {templateData.fields.map((field) => (
                   <div key={field.id} className="mb-4">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       {field.placeholder || field.type} {field.required && '*'}
