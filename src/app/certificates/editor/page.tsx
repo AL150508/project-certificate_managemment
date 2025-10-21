@@ -103,17 +103,19 @@ export default function CertificateEditorPage() {
         // Set orientation from template config
         setOrientation(templateConfig.orientation)
         
-        const configElements: CertificateElement[] = Object.entries(templateConfig.elements).map(([type, elementConfig]) => ({
-          id: generateElementId(),
-          type: type as CertificateElement['type'],
-          label: type.charAt(0).toUpperCase() + type.slice(1),
-          value: elementConfig.placeholder || '',
-          position: elementConfig.position,
-          style: elementConfig.style,
-          visible: elementConfig.visible,
-          maxWidth: elementConfig.maxWidth,
-          maxHeight: elementConfig.maxHeight
-        }))
+        const configElements: CertificateElement[] = Object.entries(templateConfig.elements)
+          .filter(([, elementConfig]) => elementConfig !== undefined)
+          .map(([type, elementConfig]) => ({
+            id: generateElementId(),
+            type: type as CertificateElement['type'],
+            label: type.charAt(0).toUpperCase() + type.slice(1),
+            value: elementConfig!.placeholder || '',
+            position: elementConfig!.position,
+            style: elementConfig!.style,
+            visible: elementConfig!.visible,
+            maxWidth: elementConfig!.maxWidth,
+            maxHeight: elementConfig!.maxHeight
+          }))
         
         setElements(configElements)
         toast.success(`Template "${templateConfig.name}" loaded with ${configElements.length} elements`)
@@ -260,7 +262,7 @@ export default function CertificateEditorPage() {
         fields: elements.map(el => ({
           id: el.id,
           type: el.type,
-          placeholder: (el as any).placeholder || '',
+          placeholder: (el as { placeholder?: string }).placeholder || '',
           required: true
         })),
         metadata: {
@@ -291,7 +293,7 @@ export default function CertificateEditorPage() {
           details: templateError.details,
           hint: templateError.hint,
           code: templateError.code,
-          statusCode: (templateError as any).statusCode
+          statusCode: (templateError as { statusCode?: number }).statusCode
         })
         console.error('📋 Template data that failed:', JSON.stringify(templateData, null, 2))
         
@@ -368,7 +370,7 @@ export default function CertificateEditorPage() {
           details: designError.details,
           hint: designError.hint,
           code: designError.code,
-          statusCode: (designError as any).statusCode
+          statusCode: (designError as { statusCode?: number }).statusCode
         })
         console.error('📋 Design data that failed:', JSON.stringify(designData, null, 2))
         
