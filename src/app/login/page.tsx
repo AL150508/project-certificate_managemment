@@ -27,29 +27,61 @@ export default function LoginPage() {
     const timeoutId = setTimeout(() => {
       setError("Login timeout. Please check your password and try again.")
       setIsLoading(false)
-    }, 5000) // 5 second timeout
+    }, 10000) // 10 second timeout
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({ 
+      // Step 1: Sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
       })
       
       clearTimeout(timeoutId)
       
-      if (error) {
-        setError(`${error.message}`)
+      if (authError) {
+        setError(`Invalid login credentials`)
         setIsLoading(false)
         return
       }
       
-      // Redirect based on selected role
-      if (selectedRole === "admin") {
+      if (!authData.user) {
+        setError("Login failed. Please try again.")
+        setIsLoading(false)
+        return
+      }
+      
+      // Step 2: Get user role from database
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("email", email)
+        .maybeSingle()
+      
+      if (userError) {
+        console.error("Error fetching user role:", userError)
+        setError("Failed to fetch user data. Please try again.")
+        setIsLoading(false)
+        return
+      }
+      
+      // Step 3: Validate role matches selected role
+      const userRole = userData?.role || "public"
+      
+      if (userRole !== selectedRole) {
+        setError(`Your account role is "${userRole}". Please select the correct role.`)
+        setIsLoading(false)
+        // Sign out the user since role doesn't match
+        await supabase.auth.signOut()
+        return
+      }
+      
+      // Step 4: Redirect based on user's actual role from database
+      if (userRole === "admin") {
         window.location.href = "/admin/dashboard"
-      } else if (selectedRole === "team") {
+      } else if (userRole === "team") {
         window.location.href = "/team/dashboard"
       } else {
-        window.location.href = "/"
+        window.location.href = "/dashboard"
       }
       
     } catch (err: unknown) {
