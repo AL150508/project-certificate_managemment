@@ -15,7 +15,7 @@ type ImportType = "template" | "category" | "member" | "certificate"
 export default function ImportClient() {
   const { register, handleSubmit, watch, setValue } = useForm<{ importType: ImportType | ""; file: FileList | null }>()
   const [uploading, setUploading] = useState(false)
-  const [logs, setLogs] = useState<any[]>([])
+  const [logs, setLogs] = useState<Array<{ id: string; type: string; filename: string; status: string; created_at: string; total_rows?: number; error_log?: string }>>([])
 
   async function loadLogs() {
     const { data } = await supabase.from("imports").select("*").order("created_at", { ascending: false }).limit(20)
@@ -44,7 +44,7 @@ export default function ImportClient() {
 
       if (!table) throw new Error("Jenis import tidak dikenal")
 
-      const { error } = await supabase.from(table).insert(jsonData as any[])
+      const { error } = await supabase.from(table).insert(jsonData as Record<string, unknown>[])
       if (error) throw error
 
       await supabase.from("imports").insert({
@@ -53,7 +53,7 @@ export default function ImportClient() {
         total_rows: jsonData.length,
         status: "success",
         summary_json: { sheet: workbook.SheetNames[0], rows: jsonData.length },
-      } as any)
+      })
       await supabase.from("activity_logs").insert({
         action: "IMPORT_DATA",
         related_table: table,
@@ -63,16 +63,16 @@ export default function ImportClient() {
       toast.success(`Import berhasil (${jsonData.length} data)`) 
       loadLogs()
       setValue("file", null)
-    } catch (e: any) {
+    } catch (e) {
       await supabase.from("imports").insert({
         type: vals.importType,
         filename: vals.file?.[0]?.name ?? "",
         total_rows: 0,
         status: "failed",
         summary_json: null,
-        error_log: e.message ?? String(e),
-      } as any)
-      toast.error(e.message ?? "Import gagal")
+        error_log: e instanceof Error ? e.message : String(e),
+      })
+      toast.error(e instanceof Error ? e.message : "Import gagal")
       loadLogs()
     } finally {
       setUploading(false)
@@ -80,7 +80,7 @@ export default function ImportClient() {
   }
 
   function downloadTemplate(type: ImportType) {
-    const map: Record<ImportType, any[]> = {
+    const map: Record<ImportType, Record<string, unknown>[]> = {
       member: [{ name: "", organization: "", phone: "", email: "", job: "", date_of_birth: "", address: "", city: "", notes: "" }],
       category: [{ name: "", description: "", template_id: "", is_active: true }],
       template: [{ name: "", orientation: "portrait", width_px: 800, height_px: 600, background_url: "", thumbnail_url: "" }],
@@ -109,7 +109,7 @@ export default function ImportClient() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm text-white/80">Import Type</label>
-              <Select onValueChange={(v) => setValue("importType", v as any)}>
+              <Select onValueChange={(v) => setValue("importType", v as ImportType | "")}>
                 <SelectTrigger className="bg-[#111] text-white border-[#333]">
                   <SelectValue placeholder="Pilih jenis import" />
                 </SelectTrigger>
@@ -150,10 +150,10 @@ export default function ImportClient() {
               <TableBody>
                 {logs.map((l) => (
                   <TableRow key={l.id} className="border-[#1f1f1f]">
-                    <TableCell className="text-white">{l.filename || l.file_name}</TableCell>
-                    <TableCell className="text-white">{l.type || l.import_type}</TableCell>
+                    <TableCell className="text-white">{l.filename}</TableCell>
+                    <TableCell className="text-white">{l.type}</TableCell>
                     <TableCell className={l.status === 'success' ? 'text-[#22c55e]' : 'text-[#dc2626]'}>{l.status}</TableCell>
-                    <TableCell className="text-white">{l.total_rows ?? l.total_records ?? '-'}</TableCell>
+                    <TableCell className="text-white">{l.total_rows ?? '-'}</TableCell>
                     <TableCell className="text-white">{l.created_at ? new Date(l.created_at).toLocaleString() : '-'}</TableCell>
                   </TableRow>
                 ))}

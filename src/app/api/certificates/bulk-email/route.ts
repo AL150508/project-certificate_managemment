@@ -35,14 +35,20 @@ export async function POST(req: NextRequest) {
     if (memberIds.length) {
       const { data: ms, error: mErr } = await supabase.from("members").select("id, email, name").in("id", memberIds)
       if (mErr) throw mErr
-      for (const m of ms ?? []) members[m.id] = { email: (m as any).email ?? null, name: (m as any).name ?? null }
+      for (const m of ms ?? []) {
+        const member = m as { id: string; email?: string | null; name?: string | null }
+        members[member.id] = { email: member.email ?? null, name: member.name ?? null }
+      }
     }
     const categoryIds = Array.from(new Set(rows.map(r => r.category_id).filter(Boolean))) as string[]
     const categories: Record<string, { name: string | null }> = {}
     if (categoryIds.length) {
       const { data: cs, error: cErr } = await supabase.from("certificate_categories").select("id, name").in("id", categoryIds)
       if (cErr) throw cErr
-      for (const c of cs ?? []) categories[(c as any).id] = { name: (c as any).name ?? null }
+      for (const c of cs ?? []) {
+        const category = c as { id: string; name?: string | null }
+        categories[category.id] = { name: category.name ?? null }
+      }
     }
 
     const base = getBaseUrl()

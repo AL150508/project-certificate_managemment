@@ -33,7 +33,7 @@ export default function MembersClient() {
   const [filterCity, setFilterCity] = useState<string | "all">("all")
 
   const [openForm, setOpenForm] = useState(false)
-  const [editing, setEditing] = useState<any | null>(null)
+  const [editing, setEditing] = useState<(MemberRow & { cert_count: number }) | null>(null)
   const [notesModal, setNotesModal] = useState<{ open: boolean; member: MemberRow | null }>({ open: false, member: null })
   // no separate dialog; we will confirm via window.confirm to avoid missing component errors
 
@@ -45,7 +45,7 @@ export default function MembersClient() {
         .select("id, name, organization, email, phone, city, job, date_of_birth, address, notes, certificates:certificates(id)")
         .order("created_at", { ascending: false })
       if (error) throw error
-      const rows = (data ?? []).map((m: any) => ({
+      const rows = (data ?? []).map((m: MemberRow & { certificates?: { id: string }[] }) => ({
         id: m.id,
         name: m.name,
         organization: m.organization,
@@ -59,8 +59,8 @@ export default function MembersClient() {
         cert_count: (m.certificates ?? []).length,
       }))
       setMembers(rows)
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to fetch members")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to fetch members")
     } finally {
       setLoading(false)
     }
@@ -93,7 +93,7 @@ export default function MembersClient() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize)
 
-  async function createOrUpdate(values: any) {
+  async function createOrUpdate(values: Partial<MemberRow>) {
     if (editing) {
       const { error } = await supabase.from("members").update(values).eq("id", editing.id)
       if (error) throw error
@@ -169,7 +169,7 @@ export default function MembersClient() {
                   <MemberForm
                     defaultValues={editing ?? undefined}
                     onSubmit={async (vals) => {
-                      try { await createOrUpdate(vals) } catch (e: any) { toast.error(e.message ?? "Failed") }
+                      try { await createOrUpdate(vals) } catch (e) { toast.error(e instanceof Error ? e.message : "Failed") }
                     }}
                   />
                 </div>
@@ -177,14 +177,14 @@ export default function MembersClient() {
             </SheetContent>
           </Sheet>
           <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => fetchMembers()}>Refresh 🔄</Button>
-          <Select value={filterOrg} onValueChange={(v) => { setFilterOrg(v as any); setPage(1) }}>
+          <Select value={filterOrg} onValueChange={(v) => { setFilterOrg(v as string | 'all'); setPage(1) }}>
             <SelectTrigger className="w-40 bg-[#111] text-white border-[#333]"><SelectValue placeholder="Organization" /></SelectTrigger>
             <SelectContent className="bg-[#0A0A0A] text-white border-[#333]">
               <SelectItem value="all">All Org</SelectItem>
               {orgOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={filterCity} onValueChange={(v) => { setFilterCity(v as any); setPage(1) }}>
+          <Select value={filterCity} onValueChange={(v) => { setFilterCity(v as string | 'all'); setPage(1) }}>
             <SelectTrigger className="w-40 bg-[#111] text-white border-[#333]"><SelectValue placeholder="City" /></SelectTrigger>
             <SelectContent className="bg-[#0A0A0A] text-white border-[#333]">
               <SelectItem value="all">All City</SelectItem>
@@ -292,7 +292,7 @@ export default function MembersClient() {
   )
 }
 
-function MemberForm({ defaultValues, onSubmit }: { defaultValues?: any; onSubmit: (vals: any) => void | Promise<void> }) {
+function MemberForm({ defaultValues, onSubmit }: { defaultValues?: MemberRow; onSubmit: (vals: Partial<MemberRow>) => void | Promise<void> }) {
   const [name, setName] = useState<string>(defaultValues?.name ?? "")
   const [organization, setOrganization] = useState<string>(defaultValues?.organization ?? "")
   const [phone, setPhone] = useState<string>(defaultValues?.phone ?? "")
@@ -747,7 +747,7 @@ function RecentActivity() {
       .eq("related_table", "members")
       .order("created_at", { ascending: false })
       .limit(5)
-      .then(({ data }) => setItems((data ?? []) as any))
+      .then(({ data }) => setItems((data ?? []) as { description: string; created_at: string }[]))
   }, [])
   return (
     <Card className="bg-[#0F0F0F] border border-[#1f1f1f] p-4 mt-8">

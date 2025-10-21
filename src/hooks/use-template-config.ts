@@ -252,7 +252,7 @@ export function useTemplateEditor(initialTemplateId?: string) {
       console.log('Update element position:', elementId, x, y)
     },
 
-    updateElementStyle: (elementId: string, styleUpdates: any) => {
+    updateElementStyle: (elementId: string, styleUpdates: Record<string, unknown>) => {
       // This would need to be implemented based on your element update logic
       console.log('Update element style:', elementId, styleUpdates)
     },

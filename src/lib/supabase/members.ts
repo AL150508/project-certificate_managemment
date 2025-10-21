@@ -28,7 +28,7 @@ export async function fetchMembers(): Promise<MemberWithCertCount[]> {
 
   if (error) throw error
 
-  return (data ?? []).map((m: any) => ({
+  return (data ?? []).map((m: MemberData & { certificates?: { id: string }[] }) => ({
     id: m.id,
     name: m.name,
     organization: m.organization,

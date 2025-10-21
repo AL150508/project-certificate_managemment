@@ -20,7 +20,9 @@ export default function CertificateCanvas({
   onSelect: (key: string | null) => void
   onMove: (key: string, x: number, y: number) => void
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const trRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const layerRef = useRef<any>(null)
   const [bgUrl, setBgUrl] = useState<string | null>(null)
 
@@ -28,9 +30,9 @@ export default function CertificateCanvas({
 
   useEffect(() => {
     // expect background saved in layout via a pseudo-field key '__background__' or width/height only
-    // if template stored background_url in layout as any property, we read it
-    const anyLayout: any = layout as any
-    setBgUrl(anyLayout.background_url ?? null)
+    // if template stored background_url in layout as property, we read it
+    const layoutWithBg = layout as typeof layout & { background_url?: string | null }
+    setBgUrl(layoutWithBg.background_url ?? null)
   }, [layout])
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function CertificateCanvas({
               fontSize={f.fontSize ?? 24}
               fill={f.color ?? "#000"}
               fontFamily={f.fontFamily ?? "Poppins"}
-              align={(f.align as any) ?? "left"}
+              align={(f.align as 'left' | 'center' | 'right') ?? "left"}
               onDragEnd={(e) => {
                 const { x, y } = e.target.position()
                 onMove(f.key, x, y)

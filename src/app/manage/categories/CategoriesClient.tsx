@@ -30,7 +30,7 @@ export default function CategoriesClient() {
   const [filterStatus, setFilterStatus] = useState<string | "all">("all")
 
   const [openForm, setOpenForm] = useState(false)
-  const [editing, setEditing] = useState<any | null>(null)
+  const [editing, setEditing] = useState<CategoryRow | null>(null)
 
   async function fetchAll() {
     setLoading(true)
@@ -40,20 +40,20 @@ export default function CategoriesClient() {
         .select("id, name, description, is_active, templates:template_id(name), certificates:certificates(id)")
         .order("created_at", { ascending: false })
       if (error) throw error
-      const rows = (data ?? []).map((c: any) => ({
+      const rows = (data ?? []).map((c: { id: string; name: string; description: string | null; is_active: boolean; templates?: { name: string } | { name: string }[]; certificates?: { id: string }[] }) => ({
         id: c.id,
         name: c.name,
         description: c.description,
         is_active: !!c.is_active,
-        template_name: c.templates?.name ?? null,
+        template_name: Array.isArray(c.templates) ? c.templates[0]?.name ?? null : (c.templates as { name: string } | undefined)?.name ?? null,
         cert_count: (c.certificates ?? []).length,
       })) as CategoryRow[]
       setItems(rows)
 
       const { data: t } = await supabase.from("templates").select("id, name").order("name")
       setTemplates((t ?? []) as TemplateRow[])
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to fetch categories")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to fetch categories")
     } finally {
       setLoading(false)
     }
@@ -76,7 +76,7 @@ export default function CategoriesClient() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize)
 
-  async function createOrUpdate(values: any) {
+  async function createOrUpdate(values: { name: string; description?: string; template_id?: string; is_active?: boolean }) {
     if (editing) {
       const { error } = await supabase.from("categories").update(values).eq("id", editing.id)
       if (error) throw error
@@ -126,12 +126,12 @@ export default function CategoriesClient() {
               <CategoryForm
                 defaultValues={editing ?? undefined}
                 templates={templates}
-                onSubmit={async (vals) => { try { await createOrUpdate(vals) } catch (e: any) { toast.error(e.message ?? 'Failed') } }}
+                onSubmit={async (vals) => { try { await createOrUpdate(vals) } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') } }}
               />
             </SheetContent>
           </Sheet>
           <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => fetchAll()}>Refresh 🔄</Button>
-          <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v as any); setPage(1) }}>
+          <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v as string | 'all'); setPage(1) }}>
             <SelectTrigger className="w-40 bg-[#111] text-white border-[#333]"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent className="bg-[#0A0A0A] text-white border-[#333]">
               <SelectItem value="all">All</SelectItem>
@@ -169,7 +169,7 @@ export default function CategoriesClient() {
                   <span className={c.is_active ? 'text-[#22c55e]' : 'text-gray-400'}>{c.is_active ? 'Active' : 'Inactive'}</span>
                 </TableCell>
                 <TableCell className="space-x-2">
-                  <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => { setEditing(c as any); setOpenForm(true) }}>Edit</Button>
+                  <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => { setEditing(c); setOpenForm(true) }}>Edit</Button>
                   <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333] hover:text-white" onClick={() => handleDelete(c)}>Delete</Button>
                 </TableCell>
               </TableRow>
@@ -191,14 +191,14 @@ export default function CategoriesClient() {
   )
 }
 
-function CategoryForm({ defaultValues, templates, onSubmit }: { defaultValues?: any; templates: TemplateRow[]; onSubmit: (vals: any) => void | Promise<void> }) {
+function CategoryForm({ defaultValues, templates, onSubmit }: { defaultValues?: CategoryRow; templates: TemplateRow[]; onSubmit: (vals: { name: string; description?: string; template_id?: string; is_active?: boolean }) => void | Promise<void> }) {
   const [name, setName] = useState<string>(defaultValues?.name ?? "")
   const [description, setDescription] = useState<string>(defaultValues?.description ?? "")
-  const [template_id, setTemplate] = useState<string>(defaultValues?.template_id ?? "")
+  const [template_id, setTemplate] = useState<string>("")
   const [is_active, setActive] = useState<boolean>(defaultValues?.is_active ?? true)
 
   return (
-    <form className="mt-4 space-y-3" onSubmit={async (e) => { e.preventDefault(); await onSubmit({ name, description, template_id: template_id || null, is_active }) }}>
+    <form className="mt-4 space-y-3" onSubmit={async (e) => { e.preventDefault(); await onSubmit({ name, description, template_id: template_id || undefined, is_active }) }}>
       <div className="space-y-2">
         <label className="text-sm text-white/80">Name</label>
         <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-[#111] text-white border-[#333]" required />
@@ -242,7 +242,7 @@ function RecentCategoryActivity() {
       .eq("related_table", "categories")
       .order("created_at", { ascending: false })
       .limit(5)
-      .then(({ data }) => setItems((data ?? []) as any))
+      .then(({ data }) => setItems((data ?? []) as { description: string; created_at: string }[]))
   }, [])
   return (
     <Card className="bg-[#0F0F0F] border border-[#1f1f1f] p-4 mt-8">

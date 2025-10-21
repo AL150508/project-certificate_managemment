@@ -4,7 +4,7 @@
  * dari template-configs.ts
  */
 
-import { TemplateConfig, TemplateConfigManager, ElementConfig } from '@/config/template-configs'
+import { TemplateConfigManager, ElementConfig } from '@/config/template-configs'
 import { CertificateElement } from '@/types/certificate'
 
 export interface RenderOptions {
@@ -51,12 +51,15 @@ export class TemplateRenderer {
 
     // Render elemen dari konfigurasi template
     Object.entries(config.elements).forEach(([elementType, elementConfig]) => {
+      if (!elementConfig) return
+      
       // Apply overrides jika ada
       const finalConfig = options.overrides?.[elementType] 
         ? { ...elementConfig, ...options.overrides[elementType] }
         : elementConfig
 
-      if (!finalConfig.visible) return
+      if (!finalConfig?.visible) return
+      if (!finalConfig.position || !finalConfig.style) return
 
       const text = options.data[elementType] || finalConfig.placeholder || ''
       
@@ -104,7 +107,7 @@ export class TemplateRenderer {
       color: element.style.color,
       textAlign: element.style.alignment,
       fontWeight: element.style.fontWeight || 'normal',
-      textTransform: element.style.textTransform as any || 'none',
+      textTransform: (element.style.textTransform as 'none' | 'capitalize' | 'uppercase' | 'lowercase') || 'none',
       letterSpacing: element.style.letterSpacing ? `${element.style.letterSpacing}px` : 'normal',
       lineHeight: element.style.lineHeight || 'normal',
       maxWidth: element.maxWidth ? `${element.maxWidth}px` : 'none',
@@ -225,7 +228,7 @@ export class TemplateRenderer {
 
     // Check required visible elements
     Object.entries(config.elements).forEach(([elementType, elementConfig]) => {
-      if (elementConfig.visible && !data[elementType]) {
+      if (elementConfig && elementConfig.visible && !data[elementType]) {
         missingFields.push(elementType)
       }
     })
@@ -254,7 +257,7 @@ export class TemplateRenderer {
     const previewData: Record<string, string> = {}
 
     Object.entries(config.elements).forEach(([elementType, elementConfig]) => {
-      if (elementConfig.visible) {
+      if (elementConfig && elementConfig.visible) {
         previewData[elementType] = elementConfig.placeholder || `Sample ${elementType}`
       }
     })

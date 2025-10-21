@@ -645,15 +645,17 @@ export class TemplateConfigManager {
       templateName: config.name,
       dimensions: config.dimensions,
       orientation: config.orientation,
-      elements: Object.entries(config.elements).map(([type, elementConfig]) => ({
-        id: `${config.id}_${type}`,
-        type: type as any,
-        label: type.charAt(0).toUpperCase() + type.slice(1),
-        value: elementConfig.placeholder || '',
-        position: elementConfig.position,
-        style: elementConfig.style,
-        visible: elementConfig.visible
-      }))
+      elements: Object.entries(config.elements)
+        .filter((entry): entry is [string, NonNullable<typeof entry[1]>] => entry[1] !== undefined)
+        .map(([type, elementConfig]) => ({
+          id: `${config.id}_${type}`,
+          type: type as string,
+          label: type.charAt(0).toUpperCase() + type.slice(1),
+          value: elementConfig.placeholder || '',
+          position: elementConfig.position,
+          style: elementConfig.style,
+          visible: elementConfig.visible
+        }))
     }
   }
 

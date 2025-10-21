@@ -23,7 +23,7 @@ interface Template {
   category_id: string | null
   template_source: string | null
   created_at: string
-  fields: any[]
+  fields: unknown[]
 }
 
 interface Category {
@@ -83,9 +83,9 @@ export default function TemplatesPage() {
         console.warn("⚠️ No templates found in database")
         toast.info("No templates found. Create your first template!")
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("❌ Error fetching data:", error)
-      toast.error(error.message || "Failed to fetch templates")
+      toast.error(error instanceof Error ? error.message : "Failed to fetch templates")
     } finally {
       setLoading(false)
     }
@@ -121,9 +121,9 @@ export default function TemplatesPage() {
       console.log("✅ Template deleted successfully")
       toast.success("Template deleted successfully")
       fetchData()
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting template:", error)
-      toast.error(error.message || "Failed to delete template")
+      toast.error(error instanceof Error ? error.message : "Failed to delete template")
     }
   }
 
