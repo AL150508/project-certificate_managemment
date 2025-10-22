@@ -523,25 +523,31 @@ export default function CertificatesClient() {
           <p className="text-[#AAAAAA] mb-4">Desain sertifikat yang telah dibuat dari Certificate Editor</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {certificateDesigns.map((design) => (
+            {certificateDesigns.map((design) => {
+              const lastModified = design.metadata?.lastModified
+              const createdBy = design.metadata?.createdBy
+              const lastModifiedStr = typeof lastModified === 'string' ? lastModified : null
+              const createdByStr = typeof createdBy === 'string' ? createdBy : null
+              
+              return (
               <Card key={design.id} className="bg-[#0F0F0F] border border-[#1f1f1f] p-4 hover:border-[#333] transition-colors">
                 <div className="space-y-3">
                   <div>
                     <h3 className="text-white font-semibold">
-                      {design.metadata?.templateName || 'Untitled Design'}
+                      {(design.metadata?.templateName as string) || 'Untitled Design'}
                     </h3>
                     <p className="text-[#AAAAAA] text-sm">
-                      {design.orientation || 'portrait'} • {design.metadata?.elementCount || 0} elements
+                      {design.orientation || 'portrait'} • {(design.metadata?.elementCount as number) || 0} elements
                     </p>
                   </div>
                   
                   <div className="text-xs text-[#666]">
                     <div>Created: {new Date(design.created_at).toLocaleDateString()}</div>
-                    {design.metadata?.lastModified && (
-                      <div>Modified: {new Date(design.metadata.lastModified).toLocaleDateString()}</div>
+                    {lastModifiedStr && (
+                      <div>Modified: {new Date(lastModifiedStr).toLocaleDateString()}</div>
                     )}
-                    {design.metadata?.createdBy && (
-                      <div>By: {design.metadata.createdBy}</div>
+                    {createdByStr && (
+                      <div>By: {createdByStr}</div>
                     )}
                   </div>
                   
@@ -573,7 +579,8 @@ export default function CertificatesClient() {
                   </div>
                 </div>
               </Card>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
