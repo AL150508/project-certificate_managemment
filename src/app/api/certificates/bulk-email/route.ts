@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
-import { supabase } from "@/lib/supabase"
+import { supabaseServer as supabase } from "@/lib/supabase-server"
 
 function getBaseUrl() {
   const envUrl = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL

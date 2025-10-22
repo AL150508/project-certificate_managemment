@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabaseServer as supabase } from "@/lib/supabase-server"
 import QRCode from "qrcode"
 import fs from "node:fs/promises"
 import path from "node:path"
