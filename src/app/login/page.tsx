@@ -161,6 +161,10 @@ export default function LoginPage() {
       // Force refresh session to ensure it's written to cookies
       const { data: { session: cookieSession }, error: sessionError } = await supabase.auth.getSession()
       
+      if (sessionError) {
+        console.error("⚠️ Session sync error:", sessionError)
+      }
+      
       if (cookieSession) {
         console.log("✅ Session synced to cookies:", cookieSession.user.email)
         console.log("📊 Session details:", {

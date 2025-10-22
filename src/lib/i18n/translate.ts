@@ -11,8 +11,19 @@ import { getCachedTranslation, cacheTranslation } from './cache'
  * Get nested translation value from translations object
  * Example: getNestedValue(translations.en, 'auth.login') => 'Login'
  */
-function getNestedValue(obj: any, path: string): string | undefined {
-  return path.split('.').reduce((current, key) => current?.[key], obj)
+function getNestedValue(obj: unknown, path: string): string | undefined {
+  const keys = path.split('.')
+  let current: unknown = obj
+  
+  for (const key of keys) {
+    if (current && typeof current === 'object' && current !== null && key in current) {
+      current = (current as Record<string, unknown>)[key]
+    } else {
+      return undefined
+    }
+  }
+  
+  return typeof current === 'string' ? current : undefined
 }
 
 /**
@@ -56,12 +67,15 @@ export async function translateText(
     const targetTranslations = translations[targetLang]
     if (targetTranslations) {
       // Search through all nested values
-      const findTranslation = (obj: any, searchText: string): string | null => {
-        for (const key in obj) {
-          const value = obj[key]
+      const findTranslation = (obj: unknown, searchText: string): string | null => {
+        if (!obj || typeof obj !== 'object') return null
+        
+        const objRecord = obj as Record<string, unknown>
+        for (const key in objRecord) {
+          const value = objRecord[key]
           if (typeof value === 'string' && value === searchText) {
             return getNestedValue(translations[targetLang], key) || null
-          } else if (typeof value === 'object') {
+          } else if (typeof value === 'object' && value !== null) {
             const found = findTranslation(value, searchText)
             if (found) return found
           }

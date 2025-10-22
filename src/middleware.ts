@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Create response object that will be modified by Supabase client
+  // eslint-disable-next-line prefer-const
   let supabaseResponse = NextResponse.next({
     request,
   })
