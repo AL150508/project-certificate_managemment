@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
-import { supabaseServer as supabase, validateSupabaseServer } from "@/lib/supabase-server"
+import { supabaseServer as supabase } from "@/lib/supabase-server"
 
 function getBaseUrl() {
   const envUrl = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
@@ -18,7 +18,6 @@ async function getTransporter() {
 
 export async function POST(req: NextRequest) {
   try {
-    validateSupabaseServer()
     const body = await req.json().catch(() => ({})) as { ids?: string[]; subject?: string }
     const ids = Array.isArray(body.ids) ? body.ids : []
     if (ids.length === 0) return NextResponse.json({ error: "ids required" }, { status: 400 })

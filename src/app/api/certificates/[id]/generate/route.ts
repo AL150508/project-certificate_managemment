@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseServer as supabase, validateSupabaseServer } from "@/lib/supabase-server"
+import { supabaseServer as supabase } from "@/lib/supabase-server"
 import QRCode from "qrcode"
 import fs from "node:fs/promises"
 import path from "node:path"
@@ -35,7 +35,6 @@ async function renderPdfAndPng(html: string, width: number, height: number) {
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   try {
-    validateSupabaseServer()
     // Load certificate + template
     const { data: cert, error: certErr } = await supabase
       .from("certificates")
