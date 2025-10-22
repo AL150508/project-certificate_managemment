@@ -460,12 +460,16 @@ export default function CertificateEditorPage() {
       const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
       const certificateNumber = `CERT-${year}-${month}-${random}`
       
+      // Generate verification code
+      const verificationCode = `VER-${year}${month}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
+      
       // Get member name if member is selected
       const selectedMemberData = selectedMember ? members.find(m => m.id === selectedMember) : null
       const recipientName = selectedMemberData?.name || `Certificate from ${templateName}`
       
       const certificateData = {
         certificate_number: certificateNumber,
+        verification_code: verificationCode, // Add verification code
         template_id: templateResult.id,
         member_id: selectedMember || null,
         category_id: selectedCategory || null,
@@ -482,7 +486,8 @@ export default function CertificateEditorPage() {
           source: 'editor',
           templateName: templateName,
           designId: designResult.id,
-          memberName: selectedMemberData?.name || null
+          memberName: selectedMemberData?.name || null,
+          verificationCode: verificationCode
         }
       }
       
@@ -511,12 +516,13 @@ export default function CertificateEditorPage() {
       
       toast.success(`Certificate saved successfully!`, {
         duration: 5000,
-        description: `Certificate Number: ${certificateNumber}\nRecipient: ${recipientName}\nCategory: ${categoryName}\nStatus: Issued\n\nYou can view it in the Certificates page.`
+        description: `Certificate Number: ${certificateNumber}\nVerification Code: ${verificationCode}\nRecipient: ${recipientName}\nCategory: ${categoryName}\nStatus: Issued\n\nYou can view it in the Certificates page.`
       })
       
       console.log('✅ Certificate saved and ready to view in /certificates')
       console.log('📋 Certificate details:', {
         number: certificateNumber,
+        verificationCode: verificationCode,
         recipient: recipientName,
         category: categoryName,
         status: 'issued',

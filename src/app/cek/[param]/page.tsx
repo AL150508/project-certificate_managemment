@@ -2,13 +2,22 @@ import type { Metadata } from "next"
 import { AppHeader } from "@/components/layouts/AppHeader"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@supabase/supabase-js"
 
 export const metadata: Metadata = {
   title: "Verifikasi Sertifikat",
 }
 
+// Create Supabase client for server-side rendering
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  return createClient(supabaseUrl, supabaseKey)
+}
+
 async function findCertificate(param: string) {
+  const supabase = getSupabaseClient()
+  
   // try by verification_code first
   const { data: initialData, error: initialError } = await supabase
     .from("certificates")
@@ -47,8 +56,9 @@ async function findCertificate(param: string) {
   }
 }
 
-export default async function VerifyPage({ params }: { params: { param: string } }) {
-  const cert = await findCertificate(decodeURIComponent(params.param))
+export default async function VerifyPage({ params }: { params: Promise<{ param: string }> }) {
+  const { param } = await params
+  const cert = await findCertificate(decodeURIComponent(param))
 
   return (
     <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden">
