@@ -1,33 +1,58 @@
 import { createBrowserClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Lazy initialization to avoid errors during build/import
+let _supabaseInstance: SupabaseClient | null = null
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please check your .env.local file.\n' +
-    'Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
-  )
-}
+function getSupabaseClient(): SupabaseClient {
+  if (_supabaseInstance) {
+    return _supabaseInstance
+  }
 
-// Create Supabase browser client with proper SSR support
-// This ensures session persistence works correctly in Next.js App Router
-// Using default cookie handling from @supabase/ssr
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Setup auth state listener to sync session across tabs/pages
-if (typeof window !== 'undefined') {
-  supabase.auth.onAuthStateChange((event, session) => {
-    console.log('🔔 Auth state changed:', event, session?.user?.email)
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('⚠️ Missing Supabase environment variables')
+    console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'present' : 'missing')
+    console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'present' : 'missing')
     
-    // Sync session to localStorage explicitly
-    if (session) {
-      console.log('✅ Session active, syncing to storage')
-    } else {
-      console.log('⚠️ No session, user logged out')
-    }
-  })
+    // Return a dummy client that will fail gracefully
+    throw new Error(
+      'Missing Supabase environment variables. Please check your .env.local file.\n' +
+      'Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY'
+    )
+  }
+
+  // Create Supabase browser client with proper SSR support
+  // This ensures session persistence works correctly in Next.js App Router
+  // Using default cookie handling from @supabase/ssr
+  _supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey)
+
+  // Setup auth state listener to sync session across tabs/pages
+  if (typeof window !== 'undefined') {
+    _supabaseInstance.auth.onAuthStateChange((event, session) => {
+      console.log('🔔 Auth state changed:', event, session?.user?.email)
+      
+      // Sync session to localStorage explicitly
+      if (session) {
+        console.log('✅ Session active, syncing to storage')
+      } else {
+        console.log('⚠️ No session, user logged out')
+      }
+    })
+  }
+
+  return _supabaseInstance
 }
+
+// Export as a Proxy to enable lazy initialization
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const instance = getSupabaseClient()
+    return instance[prop as keyof SupabaseClient]
+  }
+})
 
 export type CertificateStatus = "draft" | "published" | "revoked"
 

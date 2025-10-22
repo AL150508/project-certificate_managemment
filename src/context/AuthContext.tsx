@@ -29,26 +29,45 @@ export function AuthContextProvider({
   useEffect(() => {
     console.log('🔐 [AuthContext] Initializing...')
     
+    let subscription: { unsubscribe: () => void } | null = null
+    
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log('📊 [AuthContext] Current session:', currentSession?.user?.email || 'none')
-      setSession(currentSession)
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session: currentSession } }) => {
+        console.log('📊 [AuthContext] Current session:', currentSession?.user?.email || 'none')
+        setSession(currentSession)
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error('❌ [AuthContext] Error getting session:', error)
+        // Use initial session if available
+        if (initialSession) {
+          setSession(initialSession)
+        }
+        setLoading(false)
+      })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        console.log('🔔 [AuthContext] Auth changed:', _event, newSession?.user?.email || 'none')
-        setSession(newSession)
-        setLoading(false)
-      }
-    )
+    try {
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (_event, newSession) => {
+          console.log('🔔 [AuthContext] Auth changed:', _event, newSession?.user?.email || 'none')
+          setSession(newSession)
+          setLoading(false)
+        }
+      )
+      subscription = authListener.subscription
+    } catch (error) {
+      console.error('❌ [AuthContext] Error setting up auth listener:', error)
+      setLoading(false)
+    }
 
     return () => {
-      subscription.unsubscribe()
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
-  }, [])
+  }, [initialSession])
 
   return (
     <AuthContext.Provider value={{ session, user: session?.user ?? null, loading }}>
