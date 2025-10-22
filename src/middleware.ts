@@ -8,37 +8,54 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
+  // Check if environment variables are available
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // If environment variables are missing, log error and continue without auth
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('⚠️ [Middleware] Missing Supabase environment variables')
+    console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'present' : 'missing')
+    console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'present' : 'missing')
+    return supabaseResponse
+  }
+
+  try {
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              supabaseResponse.cookies.set(name, value, options)
+            })
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            supabaseResponse.cookies.set(name, value, options)
-          })
-        },
-      },
+      }
+    )
+
+    // IMPORTANT: Avoid writing any logic between createServerClient and
+    // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+    // issues with users being randomly logged out.
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    // Log for debugging
+    if (user) {
+      console.log('🔐 [Middleware] User authenticated:', user.email)
+    } else {
+      console.log('⚠️ [Middleware] No user found')
     }
-  )
-
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // Log for debugging
-  if (user) {
-    console.log('🔐 [Middleware] User authenticated:', user.email)
-  } else {
-    console.log('⚠️ [Middleware] No user found')
+  } catch (error) {
+    console.error('❌ [Middleware] Error in Supabase client:', error)
+    // Continue without auth if there's an error
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
