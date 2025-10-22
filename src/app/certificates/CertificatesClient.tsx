@@ -27,6 +27,16 @@ type Template = DatabaseTemplate
 export default function CertificatesClient() {
   const [loading, setLoading] = useState(false)
   const [certs, setCerts] = useState<Array<CertificateRow & { member_name: string | null; category_name: string | null }>>([])
+  const [certificateDesigns, setCertificateDesigns] = useState<Array<{
+    id: string
+    template_id: string
+    layout_data: unknown
+    orientation: string
+    member_id: string
+    metadata: Record<string, unknown>
+    created_at: string
+    updated_at: string
+  }>>([])
   const [members, setMembers] = useState<Member[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [templates, setTemplates] = useState<Template[]>([])
@@ -68,8 +78,7 @@ export default function CertificatesClient() {
       }
       
       console.log('✅ Certificate designs loaded:', data?.length || 0)
-      // You can set this to a state if needed
-      // setCertificateDesigns(data || [])
+      setCertificateDesigns(data || [])
       
     } catch (error) {
       console.log('ℹ️ Certificate designs feature not available yet - table may not be set up')
@@ -85,8 +94,8 @@ export default function CertificatesClient() {
     try {
       const { data: certData, error: certErr } = await supabase
         .from("certificates")
-        .select("id, certificate_number, verification_code, member_id, category_id, template_id, issue_date, status, pdf_url, png_url")
-        .order("issue_date", { ascending: false })
+        .select("id, certificate_number, verification_code, member_id, category_id, template_id, issue_date, status, pdf_url, png_url, recipient_name, created_by, created_at, certificate_data, metadata")
+        .order("created_at", { ascending: false })
 
       if (certErr) throw certErr
 
@@ -106,7 +115,7 @@ export default function CertificatesClient() {
       interface CertificateRowFromDB {
         id: string
         certificate_number: string
-        verification_code: string
+        verification_code: string | null
         issue_date: string | null
         status: string
         member_id: string | null
@@ -114,12 +123,17 @@ export default function CertificatesClient() {
         template_id: string | null
         pdf_url: string | null
         png_url: string | null
+        recipient_name: string | null
+        created_by: string | null
+        created_at: string | null
+        certificate_data: Record<string, unknown> | null
+        metadata: Record<string, unknown> | null
       }
 
       const rows = (certData ?? []).map((r: CertificateRowFromDB) => ({
         id: r.id,
         certificate_number: r.certificate_number,
-        verification_code: r.verification_code,
+        verification_code: r.verification_code || '',
         issue_date: r.issue_date,
         status: r.status,
         member_id: r.member_id,
@@ -129,10 +143,11 @@ export default function CertificatesClient() {
         layout: null,
         pdf_url: r.pdf_url,
         png_url: r.png_url,
-        created_by: null,
-        created_at: "",
+        created_by: r.created_by || null,
+        created_at: r.created_at || "",
         updated_at: "",
-        member_name: r.member_id ? membersMap.get(r.member_id) ?? null : null,
+        // Use recipient_name from editor, fallback to member_name from members table
+        member_name: r.recipient_name || (r.member_id ? membersMap.get(r.member_id) ?? null : null),
         category_name: r.category_id ? categoriesMap.get(r.category_id) ?? null : null,
       })) as Array<CertificateRow & { member_name: string | null; category_name: string | null }>
 
@@ -500,6 +515,68 @@ export default function CertificatesClient() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Certificate Designs Section */}
+      {certificateDesigns.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-white text-2xl font-semibold mb-4">Certificate Designs</h2>
+          <p className="text-[#AAAAAA] mb-4">Desain sertifikat yang telah dibuat dari Certificate Editor</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {certificateDesigns.map((design) => (
+              <Card key={design.id} className="bg-[#0F0F0F] border border-[#1f1f1f] p-4 hover:border-[#333] transition-colors">
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-white font-semibold">
+                      {design.metadata?.templateName || 'Untitled Design'}
+                    </h3>
+                    <p className="text-[#AAAAAA] text-sm">
+                      {design.orientation || 'portrait'} • {design.metadata?.elementCount || 0} elements
+                    </p>
+                  </div>
+                  
+                  <div className="text-xs text-[#666]">
+                    <div>Created: {new Date(design.created_at).toLocaleDateString()}</div>
+                    {design.metadata?.lastModified && (
+                      <div>Modified: {new Date(design.metadata.lastModified).toLocaleDateString()}</div>
+                    )}
+                    {design.metadata?.createdBy && (
+                      <div>By: {design.metadata.createdBy}</div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 border-[#333] bg-transparent text-white hover:bg-[#1a1a1a]"
+                      onClick={() => {
+                        // Navigate to editor with this design
+                        window.location.href = `/certificates/editor?template=${design.template_id}`
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 border-[#333] bg-transparent text-white hover:bg-[#1a1a1a]"
+                      onClick={() => {
+                        // View design details
+                        toast.info('Design details', {
+                          description: `Template: ${design.metadata?.templateName}\nElements: ${design.metadata?.elementCount}\nOrientation: ${design.orientation}`
+                        })
+                      }}
+                    >
+                      View
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Preview Sheet */}
       <Sheet open={openPreview} onOpenChange={setOpenPreview}>

@@ -77,56 +77,13 @@ export default function CertificatePreview({
               height: `${dimensions.height * scaleFactor}px`,
             }}
           >
-            {/* Template Background */}
-            {templateSource.type === 'upload' ? (
-              // For uploaded templates, show only a simple background
-              <div className="w-full h-full bg-white rounded-md relative overflow-hidden">
-                {/* Simple background for uploaded templates */}
-                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-20">
-                  Uploaded Template
-                </div>
-              </div>
-            ) : (
-              // For config templates, show realistic placeholder
-              <div className="w-full h-full bg-white rounded-md border-4 border-yellow-400 relative overflow-hidden">
-                {/* Decorative border */}
-                <div className="absolute inset-2 border-2 border-yellow-300 rounded-sm">
-                  <div className="absolute inset-2 border border-yellow-200 rounded-sm">
-                    {/* Certificate content */}
-                    <div className="flex flex-col items-center justify-center h-full p-4 text-center relative">
-                      <div className="text-2xl font-bold text-gray-800 mb-3" style={{ fontSize: `${24 * scaleFactor}px` }}>
-                        Certificate of {templateConfig?.category ? templateConfig.category.charAt(0).toUpperCase() + templateConfig.category.slice(1) : 'Achievement'}
-                      </div>
-                      <div className="text-base text-gray-600 mb-2" style={{ fontSize: `${16 * scaleFactor}px` }}>This is to certify that</div>
-                      <div className="text-xl font-bold text-gray-800 mb-3 border-b-2 border-gray-300 pb-2 px-6" style={{ fontSize: `${20 * scaleFactor}px` }}>
-                        [RECIPIENT NAME]
-                      </div>
-                      <div className="text-sm text-gray-600 mb-3" style={{ fontSize: `${14 * scaleFactor}px` }}>
-                        has successfully completed the requirements for
-                      </div>
-                      <div className="text-lg font-semibold text-gray-800 mb-6" style={{ fontSize: `${18 * scaleFactor}px` }}>
-                        [{templateConfig?.category?.toUpperCase() || 'PROGRAM'} PROGRAM]
-                      </div>
-                      <div className="flex justify-between w-full mt-auto">
-                        <div className="text-xs text-gray-600" style={{ fontSize: `${12 * scaleFactor}px` }}>
-                          <div className="border-t border-gray-400 pt-1">Date</div>
-                        </div>
-                        <div className="text-xs text-gray-600" style={{ fontSize: `${12 * scaleFactor}px` }}>
-                          <div className="border-t border-gray-400 pt-1">Signature</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {/* Template name overlay */}
-                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-20">
-                  {templateConfig?.name}
-                </div>
-              </div>
-            )}
+            {/* Template Background - Simple white background for all types */}
+            <div className="w-full h-full bg-white rounded-md relative overflow-hidden">
+              {/* Background placeholder */}
+            </div>
             
-            {/* Uploaded template image */}
-            {templateSource.type === 'upload' && (
+            {/* Template Image - Show for upload and admin types */}
+            {(templateSource.type === 'upload' || templateSource.type === 'admin') && (
               <Image
                 src={templateSource.url}
                 alt="Selected Template"
@@ -134,11 +91,12 @@ export default function CertificatePreview({
                 className="rounded-md object-contain absolute inset-0"
                 style={{ zIndex: 10 }}
                 priority
-                onError={() => {
-                  console.error('Failed to load uploaded template image:', templateSource.url)
+                onError={(e) => {
+                  console.error('Failed to load template image:', templateSource.url)
+                  console.error('Error details:', e)
                 }}
                 onLoad={() => {
-                  console.log('Uploaded template loaded successfully')
+                  console.log('✅ Template image loaded successfully:', templateSource.url)
                 }}
               />
             )}

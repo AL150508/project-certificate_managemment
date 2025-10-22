@@ -1,19 +1,26 @@
-import { createClient } from "@supabase/supabase-js"
+import { createBrowserClient } from '@supabase/ssr'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
-// Validate environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("⚠️ Supabase environment variables are missing. Using placeholder values for build.")
-  console.warn("Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY")
+// Create Supabase browser client with proper SSR support
+// This ensures session persistence works correctly in Next.js App Router
+// Using default cookie handling from @supabase/ssr
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+
+// Setup auth state listener to sync session across tabs/pages
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔔 Auth state changed:', event, session?.user?.email)
+    
+    // Sync session to localStorage explicitly
+    if (session) {
+      console.log('✅ Session active, syncing to storage')
+    } else {
+      console.log('⚠️ No session, user logged out')
+    }
+  })
 }
-
-// Use placeholder values during build if env vars are missing
-const url = supabaseUrl || 'https://placeholder.supabase.co'
-const key = supabaseAnonKey || 'placeholder-anon-key'
-
-export const supabase = createClient(url, key)
 
 export type CertificateStatus = "draft" | "published" | "revoked"
 

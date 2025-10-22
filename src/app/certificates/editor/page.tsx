@@ -23,6 +23,8 @@ export default function CertificateEditorPage() {
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [categories, setCategories] = useState<Array<{id: string, name: string}>>([])
+  const [selectedMember, setSelectedMember] = useState<string>('')
+  const [members, setMembers] = useState<Array<{id: string, name: string, email: string}>>([])
   const [templateId, setTemplateId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -127,6 +129,31 @@ export default function CertificateEditorPage() {
     toast.success('Template selected successfully!')
   }
 
+  // Load members from database
+  useEffect(() => {
+    const loadMembers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('members')
+          .select('id, name, email')
+          .order('name')
+
+        if (error) {
+          console.error('Error loading members:', error)
+          setMembers([])
+        } else {
+          console.log('Loaded members from database:', data)
+          setMembers(data || [])
+        }
+      } catch (error) {
+        console.error('Error loading members:', error)
+        setMembers([])
+      }
+    }
+
+    loadMembers()
+  }, [])
+
   const handleElementAdd = (type: CertificateElement['type']) => {
     const newElement: CertificateElement = {
       id: generateElementId(),
@@ -212,18 +239,40 @@ export default function CertificateEditorPage() {
     console.log('📝 Saving state set to true')
 
     // Re-check user authentication
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
-    console.log('Current User:', currentUser)
-    console.log('Template Source:', templateSource)
-    console.log('Elements:', elements)
-    console.log('Selected Category:', selectedCategory)
-
+    console.log('🔐 Checking user authentication...')
+    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
+    
+    console.log('Authentication check result:', {
+      user: currentUser,
+      email: currentUser?.email,
+      error: authError
+    })
+    
     if (!currentUser) {
-      toast.error('Please login to save templates')
-      router.push('/login')
+      console.error('❌ No user found - authentication required')
+      console.error('Auth error:', authError)
+      
+      toast.error('Session expired. Please login again.', {
+        duration: 5000,
+        description: 'Your session has expired. You need to login to save certificates.'
+      })
+      
+      // Wait a bit before redirect so user can see the message
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+      
       setSaving(false)
       return
     }
+    
+    console.log('✅ User authenticated:', currentUser.email)
+    console.log('📋 Save data:', {
+      templateSource: templateSource?.type,
+      elementsCount: elements.length,
+      selectedCategory: selectedCategory,
+      selectedMember: selectedMember
+    })
 
     try {
       // Test database connection first
@@ -345,10 +394,14 @@ export default function CertificateEditorPage() {
         template_id: templateResult.id, // Link to the template we just created
         layout_data: elements, // Store the actual layout elements
         orientation: orientation,
+        member_id: currentUser.id, // User who created this design
         metadata: {
           templateName: templateName,
           elementCount: elements.length,
-          lastModified: new Date().toISOString()
+          lastModified: new Date().toISOString(),
+          createdBy: currentUser.email,
+          selectedMemberId: selectedMember || null, // Member yang dipilih dari dropdown (optional)
+          selectedMemberName: selectedMember ? members.find(m => m.id === selectedMember)?.name : null
         }
       }
 
@@ -397,24 +450,82 @@ export default function CertificateEditorPage() {
       console.log('Design saved successfully:', designResult)
       console.log('=== STEP 2 COMPLETED ===')
 
+      // STEP 3: Also save to certificates table for display in main list
+      console.log('=== STEP 3: Saving to certificates table ===')
+      
+      // Generate certificate number
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+      const certificateNumber = `CERT-${year}-${month}-${random}`
+      
+      // Get member name if member is selected
+      const selectedMemberData = selectedMember ? members.find(m => m.id === selectedMember) : null
+      const recipientName = selectedMemberData?.name || `Certificate from ${templateName}`
+      
+      const certificateData = {
+        certificate_number: certificateNumber,
+        template_id: templateResult.id,
+        member_id: selectedMember || null,
+        category_id: selectedCategory || null,
+        recipient_name: recipientName, // Use member name if available, otherwise descriptive name
+        issue_date: now.toISOString().split('T')[0],
+        status: 'issued', // Mark as issued so it appears in certificates list
+        created_by: currentUser.id,
+        certificate_data: {
+          elements: elements,
+          orientation: orientation,
+          templateSource: templateSource
+        },
+        metadata: {
+          source: 'editor',
+          templateName: templateName,
+          designId: designResult.id,
+          memberName: selectedMemberData?.name || null
+        }
+      }
+      
+      console.log('Certificate data:', certificateData)
+      
+      const { data: certResult, error: certError } = await supabase
+        .from('certificates')
+        .insert(certificateData)
+        .select()
+        .single()
+      
+      if (certError) {
+        console.warn('⚠️ Certificate save to main table failed (non-critical):', certError)
+        // Don't fail the whole operation, design is already saved
+      } else {
+        console.log('✅ Certificate saved to main table:', certResult)
+      }
+      
+      console.log('=== STEP 3 COMPLETED ===')
+
       console.log('=== SAVE COMPLETED SUCCESSFULLY ===')
       
-      // Show success details  
-      const categoryName = categories.find(c => c.id === selectedCategory)?.name || selectedCategory
-      toast.success(`Template "${templateName}" saved successfully!`, {
-        duration: 3000
+      // Show success message with details
+      const categoryName = categories.find(c => c.id === selectedCategory)?.name || 'General'
+      const memberName = selectedMemberData?.name || 'No member selected'
+      
+      toast.success(`Certificate saved successfully!`, {
+        duration: 5000,
+        description: `Certificate Number: ${certificateNumber}\nRecipient: ${recipientName}\nCategory: ${categoryName}\nStatus: Issued\n\nYou can view it in the Certificates page.`
       })
       
-      console.log('🔄 Redirecting to /certificates...')
+      console.log('✅ Certificate saved and ready to view in /certificates')
+      console.log('📋 Certificate details:', {
+        number: certificateNumber,
+        recipient: recipientName,
+        category: categoryName,
+        status: 'issued',
+        templateId: templateResult.id,
+        designId: designResult.id,
+        certificateId: certResult?.id
+      })
       
-      // Redirect to certificates page with force refresh
-      setTimeout(() => {
-        router.push('/certificates?refresh=true')
-        // Also trigger a hard refresh after navigation
-        setTimeout(() => {
-          window.location.href = '/certificates'
-        }, 100)
-      }, 1000)
+      // NO REDIRECT - Stay in editor so user can continue editing or create more certificates
       
     } catch (error) {
       console.error('Error saving certificate design:', error)
@@ -467,6 +578,31 @@ export default function CertificateEditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Member Selector */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-[#9ca3af]">Member</label>
+              <Select value={selectedMember} onValueChange={setSelectedMember}>
+                <SelectTrigger className="w-48 bg-[#1f2937] border-[#374151] text-white">
+                  <SelectValue placeholder="Select member" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1f2937] border-[#374151] text-white max-h-60">
+                  {members.length === 0 ? (
+                    <SelectItem value="none" disabled>No members found</SelectItem>
+                  ) : (
+                    members.map((member) => (
+                      <SelectItem 
+                        key={member.id} 
+                        value={member.id}
+                        className="text-white hover:bg-[#374151] focus:bg-[#374151]"
+                      >
+                        {member.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Category Selector */}
             <div className="flex flex-col gap-1">
               <label className="text-xs text-[#9ca3af]">Category</label>

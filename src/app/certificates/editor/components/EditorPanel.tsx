@@ -103,16 +103,9 @@ export default function EditorPanel({
   const selectedElement = elements.find(el => el.id === selectedElementId)
 
   const handleElementClick = (type: CertificateElement['type']) => {
-    const existingElement = elements.find(el => el.type === type)
-    console.log('Existing element found:', existingElement)
-    
-    if (existingElement) {
-      console.log('Selecting existing element:', existingElement.id)
-      onElementSelect(existingElement.id)
-    } else {
-      console.log('Adding new element of type:', type)
-      onElementAdd(type)
-    }
+    // Always add new element, no limit!
+    console.log('Adding new element of type:', type)
+    onElementAdd(type)
   }
 
   const updateElement = (updates: Partial<CertificateElement>) => {
@@ -186,19 +179,22 @@ export default function EditorPanel({
         <Label className="text-[#E2E8F0] text-sm mb-3 block">Edit Elements</Label>
         <div className="mt-4 flex flex-wrap justify-between gap-3">
           {ELEMENT_TYPES.map(({ type, label }) => {
-            const hasElement = elements.some(el => el.type === type)
-            const isSelected = selectedElement?.type === type
+            const elementCount = elements.filter(el => el.type === type).length
             
             return (
               <Button
                 key={type}
                 className={cn(
-                  "bg-[#1E293B] border border-[#334155] text-[#E2E8F0] px-4 py-2 rounded-md w-[48%] hover:bg-[#334155] h-10 text-sm font-medium",
-                  isSelected && "ring-2 ring-[#3B82F6] bg-[#334155]"
+                  "bg-[#1E293B] border border-[#334155] text-[#E2E8F0] px-4 py-2 rounded-md w-[48%] hover:bg-[#334155] h-10 text-sm font-medium relative"
                 )}
                 onClick={() => handleElementClick(type)}
               >
                 {label}
+                {elementCount > 0 && (
+                  <span className="ml-2 bg-[#3B82F6] text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {elementCount}
+                  </span>
+                )}
               </Button>
             )
           })}

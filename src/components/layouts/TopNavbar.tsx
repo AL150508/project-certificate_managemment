@@ -1,8 +1,9 @@
 "use client"
 
-import { Bell, Globe, Menu } from "lucide-react"
+import { Bell, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 
 export function TopNavbar({ onToggleSidebar, role }: { onToggleSidebar?: () => void; role?: "Administrator" | "Team" | "Public" }) {
   return (
@@ -21,10 +22,10 @@ export function TopNavbar({ onToggleSidebar, role }: { onToggleSidebar?: () => v
           <Button variant="ghost" size="icon" className="text-white hover:text-white/90 hover:bg-[#111]">
             <Bell className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-[#111] gap-1">
-            <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline">EN/ID</span>
-          </Button>
+          
+          {/* Language Switcher */}
+          <LanguageSwitcher variant="compact" />
+          
           <Avatar>
             <AvatarFallback className="bg-[#1A1A1A] text-white">CM</AvatarFallback>
           </Avatar>

@@ -9,8 +9,9 @@ const AdminMenu: LinkItem[] = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/certificates", label: "Certificates" },
   { href: "/admin/templates", label: "Templates" },
-  { href: "/admin/members", label: "Members" },
-  { href: "/admin/categories", label: "Categories" },
+  { href: "/manage/members", label: "Members" },
+  { href: "/manage/categories", label: "Categories" },
+  { href: "/manage/import", label: "Import" },
   { href: "/faq", label: "FAQ" },
 ]
 
@@ -18,8 +19,9 @@ const TeamMenu: LinkItem[] = [
   { href: "/team/dashboard", label: "Dashboard" },
   { href: "/certificates", label: "Certificates" },
   { href: "/admin/templates", label: "Templates" },
-  { href: "/admin/members", label: "Members" },
-  { href: "/admin/categories", label: "Categories" },
+  { href: "/manage/members", label: "Members" },
+  { href: "/manage/categories", label: "Categories" },
+  { href: "/manage/import", label: "Import" },
   { href: "/faq", label: "FAQ" },
 ]
 

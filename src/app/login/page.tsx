@@ -21,30 +21,26 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setIsLoading(true)
+    setIsLoading(false)
     
     // FALLBACK CREDENTIALS - Hardcoded for emergency access
     const FALLBACK_CREDENTIALS = {
       admin: {
-        email: "admin@gmail.com",
-        password: "admin123",
+        email: "admin@test.com",
+        password: "Admin@123",
         role: "admin" as const
       },
       team: {
-        email: "team@gmail.com", 
-        password: "team123",
+        email: "team@test.com", 
+        password: "Team@123",
         role: "team" as const
       }
     }
     
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      setError("Login timeout. Please check your password and try again.")
-      setIsLoading(false)
-    }, 10000) // 10 second timeout
-    
     try {
-      // Check fallback credentials first
+      setIsLoading(true)
+      
+      // Check fallback credentials FIRST before any async operations
       let useFallback = false
       let fallbackRole: "admin" | "team" | null = null
       
@@ -62,20 +58,71 @@ export default function LoginPage() {
         console.log("✅ Using fallback team credentials")
       }
       
-      // If using fallback, skip Supabase Auth and redirect directly
+      // If using fallback, try to create a proper Supabase session
       if (useFallback && fallbackRole) {
-        clearTimeout(timeoutId)
-        console.log(`🔐 Fallback login successful for ${fallbackRole}`)
+        console.log(`🔐 Attempting fallback login for ${fallbackRole}`)
         
-        if (fallbackRole === "admin") {
-          window.location.href = "/admin/dashboard"
-        } else if (fallbackRole === "team") {
-          window.location.href = "/team/dashboard"
+        // Try to sign in with Supabase using fallback credentials
+        // This will create a proper session
+        const { data: fallbackAuthData, error: fallbackAuthError } = await supabase.auth.signInWithPassword({ 
+          email, 
+          password 
+        })
+        
+        if (!fallbackAuthError && fallbackAuthData.user) {
+          console.log(`✅ Fallback login successful with Supabase session for ${fallbackRole}`)
+          
+          // Store fallback role
+          localStorage.setItem('fallback_role', fallbackRole)
+          localStorage.setItem('fallback_user', JSON.stringify({
+            email: email,
+            role: fallbackRole,
+            id: fallbackAuthData.user.id
+          }))
+          
+          setIsLoading(false)
+          
+          // Redirect with proper session
+          setTimeout(() => {
+            if (fallbackRole === "admin") {
+              window.location.href = "/admin/dashboard"
+            } else if (fallbackRole === "team") {
+              window.location.href = "/team/dashboard"
+            }
+          }, 100)
+          return
+        } else {
+          // If Supabase auth fails, use localStorage only (old behavior)
+          console.warn(`⚠️ Supabase auth failed for fallback, using localStorage only`)
+          console.warn(`Error:`, fallbackAuthError)
+          
+          localStorage.setItem('fallback_role', fallbackRole)
+          localStorage.setItem('fallback_user', JSON.stringify({
+            email: email,
+            role: fallbackRole
+          }))
+          
+          setIsLoading(false)
+          
+          setTimeout(() => {
+            if (fallbackRole === "admin") {
+              window.location.href = "/admin/dashboard"
+            } else if (fallbackRole === "team") {
+              window.location.href = "/team/dashboard"
+            }
+          }, 100)
+          return
         }
-        return
       }
       
+      // Add timeout ONLY for Supabase Auth (not for fallback)
+      const timeoutId = setTimeout(() => {
+        setError("Login timeout. Supabase connection is slow. Try these credentials:\nAdmin: admin@test.com / Admin@123\nTeam: team@test.com / Team@123")
+        setIsLoading(false)
+      }, 60000) // 30 second timeout for Supabase
+      
       // Step 1: Sign in with Supabase Auth (normal flow)
+      console.log("🔐 Attempting login with:", email)
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
@@ -83,9 +130,18 @@ export default function LoginPage() {
       
       clearTimeout(timeoutId)
       
+      console.log("📊 Login response:", { authData, authError })
+      
       if (authError) {
-        console.error("Auth error:", authError)
-        setError(`Invalid login credentials. ${authError.message}`)
+        console.error("❌ Auth error:", authError)
+        console.error("📋 Error details:", {
+          message: authError.message,
+          status: authError.status,
+          name: authError.name
+        })
+        // Provide helpful message with correct credentials
+        const credentialsHint = `\n\nUse these credentials:\nAdmin: admin@test.com / Admin@123\nTeam: team@test.com / Team@123`
+        setError(`Invalid login credentials. ${authError.message}${credentialsHint}`)
         setIsLoading(false)
         return
       }
@@ -96,7 +152,55 @@ export default function LoginPage() {
         return
       }
       
-      console.log("User authenticated:", authData.user.email)
+      console.log("✅ User authenticated:", authData.user.email)
+      
+      // CRITICAL: Force sync session to cookies (not just localStorage)
+      // This ensures SSR middleware can read the session
+      console.log("🍪 Syncing session to cookies...")
+      
+      // Force refresh session to ensure it's written to cookies
+      const { data: { session: cookieSession }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (cookieSession) {
+        console.log("✅ Session synced to cookies:", cookieSession.user.email)
+        console.log("📊 Session details:", {
+          user: cookieSession.user.email,
+          expiresAt: new Date(cookieSession.expires_at! * 1000).toLocaleString(),
+          hasAccessToken: !!cookieSession.access_token
+        })
+      } else {
+        console.warn("⚠️ Session not found after sync, forcing manual set...")
+        
+        // Force set session to ensure it's in cookies
+        if (authData.session) {
+          await supabase.auth.setSession({
+            access_token: authData.session.access_token,
+            refresh_token: authData.session.refresh_token
+          })
+          
+          // Verify again
+          const { data: { session: retrySession } } = await supabase.auth.getSession()
+          if (retrySession) {
+            console.log("✅ Session saved to cookies after manual set:", retrySession.user.email)
+          } else {
+            console.error("❌ Failed to save session to cookies!")
+          }
+        }
+      }
+      
+      // BACKUP: Also save to localStorage for fallback
+      if (authData.session && authData.user) {
+        console.log("💾 Saving backup to localStorage...")
+        localStorage.setItem('supabase_user', JSON.stringify({
+          id: authData.user.id,
+          email: authData.user.email,
+          access_token: authData.session.access_token,
+          refresh_token: authData.session.refresh_token,
+          expires_at: authData.session.expires_at,
+          saved_at: new Date().toISOString()
+        }))
+        console.log("✅ Backup saved to localStorage")
+      }
       
       // Step 2: Get user role from database
       const { data: userData, error: userError } = await supabase
@@ -143,7 +247,6 @@ export default function LoginPage() {
       }
       
     } catch (err: unknown) {
-      clearTimeout(timeoutId)
       const message = err instanceof Error ? err.message : "Login failed"
       setError(message)
       setIsLoading(false)

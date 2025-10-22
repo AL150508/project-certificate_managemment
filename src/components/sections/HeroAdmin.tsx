@@ -1,25 +1,32 @@
+"use client"
+
 import Image from "next/image"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export default function HeroAdmin() {
+  const { t } = useLanguage()
+  
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#0B0B0F] to-[#101016] px-6 md:px-12 py-12">
       <div className="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs text-rose-300">
-            Admin Dashboard
+            {t('dashboard.adminDashboard')}
           </div>
           <h1 className="mt-4 text-3xl md:text-5xl font-semibold leading-tight text-zinc-100">
-            Kelola Sertifikat <span className="text-rose-500">Digital</span> dengan Cepat
+            {t('dashboard.manageDigitalCertificates').split('Digital')[0]}
+            <span className="text-rose-500">Digital</span>
+            {t('dashboard.manageDigitalCertificates').split('Digital')[1] || t('dashboard.manageDigitalCertificates').split('Sertifikat')[1]}
           </h1>
           <p className="mt-3 text-zinc-400 max-w-prose">
-            Buat, kelola, dan kirim sertifikat dalam jumlah besar hanya dalam hitungan detik. Dukungan template, impor Excel, dan verifikasi publik.
+            {t('dashboard.manageDescription')}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a className="inline-flex items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-500 transition-colors" href="/certificates/create">
-              Buat Sertifikat
+              {t('dashboard.createCertificate')}
             </a>
             <a className="inline-flex items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-800 transition-colors" href="/manage/members">
-              Kelola Members
+              {t('dashboard.manageMembers')}
             </a>
           </div>
         </div>

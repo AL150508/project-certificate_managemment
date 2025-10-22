@@ -31,17 +31,22 @@ export default function TemplateSelector({
 
   const fetchAdminTemplates = async () => {
     try {
+      console.log('🔍 Fetching templates from database...')
       const { data, error } = await supabase
         .from('certificate_templates')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(6)
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Error fetching templates:', error)
+        throw error
+      }
+      
+      console.log('✅ Templates loaded:', data?.length || 0)
       setAdminTemplates(data || [])
     } catch (error) {
       console.error('Error fetching templates:', error)
-      toast.error('Failed to load admin templates')
+      toast.error('Failed to load templates')
     } finally {
       setLoading(false)
     }
@@ -95,17 +100,22 @@ export default function TemplateSelector({
   }
 
   const handleAdminTemplateSelect = (template: CertificateTemplate) => {
-    if (!template.preview_url) {
-      toast.error('Template preview not available')
+    // Use background_url or preview_url as template source
+    const templateUrl = template.background_url || template.preview_url
+    
+    if (!templateUrl) {
+      toast.error('Template image not available')
       return
     }
 
     const templateSource: TemplateSource = {
       type: 'admin',
-      url: template.preview_url
+      url: templateUrl
     }
 
+    console.log('✅ Template selected:', template.name, templateUrl)
     onTemplateSelect(templateSource)
+    toast.success(`Template "${template.name}" selected!`)
   }
 
   const handleConfigTemplateSelect = (templateConfig: typeof predefinedTemplates[0]) => {
@@ -135,28 +145,41 @@ export default function TemplateSelector({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
-          {/* Show All Available Templates */}
-          {predefinedTemplates.slice(0, 4).map((templateConfig) => (
-            <div
-              key={templateConfig.id}
-              className={`h-[140px] bg-[#1E293B] border border-[#334155] rounded-md flex items-center justify-center text-sm font-semibold text-[#E2E8F0] cursor-pointer hover:bg-[#273548] transition relative overflow-hidden ${
-                selectedTemplate?.type === 'config' && selectedTemplate.configId === templateConfig.id
-                  ? 'ring-2 ring-[#3B82F6]'
-                  : ''
-              }`}
-              onClick={() => handleConfigTemplateSelect(templateConfig)}
-            >
-              <div className="text-center p-4">
-                <div className="w-full h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded mb-2 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">
-                    {templateConfig.category?.toUpperCase() || 'TEMPLATE'}
-                  </span>
-                </div>
-                <span className="block text-xs">{templateConfig.name}</span>
-                <span className="text-xs opacity-70">{templateConfig.orientation}</span>
+          {/* Show Templates from Database */}
+          {adminTemplates.length > 0 ? (
+            adminTemplates.map((template) => (
+              <div
+                key={template.id}
+                className={`h-[140px] bg-[#1E293B] border border-[#334155] rounded-md flex items-center justify-center text-sm font-semibold text-[#E2E8F0] cursor-pointer hover:bg-[#273548] transition relative overflow-hidden ${
+                  selectedTemplate?.type === 'admin' && selectedTemplate.url === (template.background_url || template.preview_url)
+                    ? 'ring-2 ring-[#3B82F6]'
+                    : ''
+                }`}
+                onClick={() => handleAdminTemplateSelect(template)}
+              >
+                {template.preview_url ? (
+                  <img 
+                    src={template.preview_url} 
+                    alt={template.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center p-4">
+                    <div className="w-full h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded mb-2 flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">
+                        {template.name.substring(0, 10).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="block text-xs truncate">{template.name}</span>
+                  </div>
+                )}
               </div>
+            ))
+          ) : (
+            <div className="col-span-2 text-center py-8 text-[#94A3B8] text-sm">
+              No templates available. Create one first!
             </div>
-          ))}
+          )}
         </div>
       )}
 

@@ -1,11 +1,10 @@
 "use client"
 
 import {
-  IconCreditCard,
   IconDotsVertical,
   IconLogout,
-  IconNotification,
   IconUserCircle,
+  IconLanguage,
 } from "@tabler/icons-react"
 
 import {
@@ -21,6 +20,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import {
   SidebarMenu,
@@ -28,6 +30,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useRouter } from "next/navigation"
+import { useLanguage } from "@/components/providers/LanguageProvider"
+import { languageOptions } from "@/lib/i18n/translations"
 
 export function NavUser({
   user,
@@ -39,6 +44,12 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+  const { currentLanguage, setLanguage } = useLanguage()
+
+  const handleLogout = () => {
+    router.push("/logout")
+  }
 
   return (
     <SidebarMenu>
@@ -86,21 +97,45 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <IconUserCircle />
-                Account
+                Profil
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
-              </DropdownMenuItem>
+              
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <IconLanguage className="mr-2 h-4 w-4" />
+                  <span>Language</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {languageOptions.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => setLanguage(lang.code)}
+                      className={currentLanguage === lang.code ? 'bg-accent' : ''}
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      <span>{lang.nativeName}</span>
+                      {currentLanguage === lang.code && (
+                        <span className="ml-auto">✓</span>
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <IconLogout />
-              Log out
+            <DropdownMenuItem asChild>
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log("🔐 Logout button clicked!")
+                  handleLogout()
+                }}
+                className="w-full flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50 px-2 py-1.5 text-sm"
+              >
+                <IconLogout className="h-4 w-4" />
+                Log out
+              </button>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

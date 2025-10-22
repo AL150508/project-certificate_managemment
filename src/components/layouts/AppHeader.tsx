@@ -9,14 +9,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
-import { User, Settings, LogOut } from "lucide-react"
+import { User, LogOut, Languages } from "lucide-react"
 import { useRoleLinks } from "@/components/layouts/NavLinks"
 import { RoleIndicator } from "@/components/layouts/RoleIndicator"
 import { useRole } from "@/context/RoleContext"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useLanguage } from "@/components/providers/LanguageProvider"
+import { languageOptions } from "@/lib/i18n/translations"
 
 type LinkItem = { href: string; label: string }
 
@@ -32,6 +37,7 @@ export function AppHeader({
   const roleLinks = useRoleLinks()
   const navLinks = links ?? roleLinks
   const isLoggedIn = role !== "public"
+  const { currentLanguage, setLanguage } = useLanguage()
 
   async function handleLogoutOrLogin() {
     if (isLoggedIn) {
@@ -106,10 +112,29 @@ export function AppHeader({
                     <User className="mr-2 h-4 w-4" />
                     <span>Profil</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-white hover:bg-[#333] cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Pengaturan</span>
-                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="text-white hover:bg-[#333]">
+                      <Languages className="mr-2 h-4 w-4" />
+                      <span>Language</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="bg-[#1a1a1a] border-[#333]">
+                      {languageOptions.map((lang) => (
+                        <DropdownMenuItem
+                          key={lang.code}
+                          onClick={() => setLanguage(lang.code)}
+                          className={`text-white hover:bg-[#333] ${currentLanguage === lang.code ? 'bg-[#333]' : ''}`}
+                        >
+                          <span className="mr-2">{lang.flag}</span>
+                          <span>{lang.nativeName}</span>
+                          {currentLanguage === lang.code && (
+                            <span className="ml-auto">✓</span>
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  
                   <DropdownMenuSeparator className="bg-[#333]" />
                   <DropdownMenuItem 
                     className="text-red-400 hover:bg-red-400/10 cursor-pointer"

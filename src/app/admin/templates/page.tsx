@@ -4,26 +4,26 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Pencil, Trash2, Plus, Eye, Search } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { Plus, Eye, Pencil, Trash2, Search, RectangleHorizontal, RectangleVertical } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { usePermissions } from "@/hooks/usePermissions"
+import { useRole } from "@/context/RoleContext"
+import { AppHeader } from "@/components/layouts/AppHeader"
+import Image from "next/image"
 
 interface Template {
   id: string
   name: string
-  orientation: string
+  orientation: "landscape" | "portrait"
   background_url: string | null
   preview_url: string | null
   thumbnail_url: string | null
   category_id: string | null
-  template_source: string | null
   created_at: string
-  fields: unknown[]
 }
 
 interface Category {
@@ -31,13 +31,27 @@ interface Category {
   name: string
 }
 
-export default function TemplatesPage() {
+export default function TemplatesPageNew() {
   const router = useRouter()
-  const { canDeleteTemplate } = usePermissions()
+  const { role } = useRole()
+  const isAdmin = role === "admin"
+
   const [templates, setTemplates] = useState<Template[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  
+  // Create Template Dialog State
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    category_id: "",
+    orientation: "landscape" as "landscape" | "portrait",
+    template_image: null as File | null,
+    preview_image: null as File | null
+  })
 
   useEffect(() => {
     fetchData()
@@ -46,8 +60,7 @@ export default function TemplatesPage() {
   async function fetchData() {
     setLoading(true)
     try {
-      console.log("📥 Fetching templates and categories...")
-      console.log("🔍 Current user:", await supabase.auth.getUser())
+      console.log("📥 Fetching templates and categories from database...")
       
       const [templatesResp, categoriesResp] = await Promise.all([
         supabase
@@ -72,42 +85,131 @@ export default function TemplatesPage() {
         throw categoriesResp.error
       }
       
-      console.log("✅ Fetched", templatesResp.data?.length, "templates")
-      console.log("📋 Templates data:", templatesResp.data)
-      console.log("✅ Fetched", categoriesResp.data?.length, "categories")
+      console.log(`✅ Fetched ${templatesResp.data?.length || 0} templates`)
+      console.log(`✅ Fetched ${categoriesResp.data?.length || 0} categories`)
       
       setTemplates(templatesResp.data || [])
       setCategories(categoriesResp.data || [])
-      
-      if (!templatesResp.data || templatesResp.data.length === 0) {
-        console.warn("⚠️ No templates found in database")
-        toast.info("No templates found. Create your first template!")
-      }
     } catch (error) {
       console.error("❌ Error fetching data:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to fetch templates")
+      toast.error("Failed to fetch templates")
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCreateTemplate() {
+    if (!formData.name || !formData.category_id || !formData.template_image || !formData.preview_image) {
+      toast.error("Please fill all required fields")
+      return
+    }
+
+    setCreating(true)
+    try {
+      console.log("🚀 Starting template creation...")
+      console.log("📝 Form data:", {
+        name: formData.name,
+        category_id: formData.category_id,
+        orientation: formData.orientation
+      })
+
+      const bucketName = "certificates"
+      console.log("📦 Using bucket:", bucketName)
+
+      // Upload template image
+      const templateImagePath = `templates/${Date.now()}_${formData.template_image.name}`
+      console.log("📤 Uploading template image to:", bucketName, templateImagePath)
+      
+      const { error: uploadError1 } = await supabase.storage
+        .from(bucketName)
+        .upload(templateImagePath, formData.template_image)
+      
+      if (uploadError1) {
+        console.error("❌ Template image upload error:", uploadError1)
+        throw uploadError1
+      }
+      console.log("✅ Template image uploaded successfully")
+
+      // Upload preview image
+      const previewImagePath = `templates/previews/${Date.now()}_${formData.preview_image.name}`
+      console.log("📤 Uploading preview image to:", bucketName, previewImagePath)
+      
+      const { error: uploadError2 } = await supabase.storage
+        .from(bucketName)
+        .upload(previewImagePath, formData.preview_image)
+      
+      if (uploadError2) {
+        console.error("❌ Preview image upload error:", uploadError2)
+        throw uploadError2
+      }
+      console.log("✅ Preview image uploaded successfully")
+
+      // Get public URLs
+      const { data: { publicUrl: templateUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(templateImagePath)
+      
+      const { data: { publicUrl: previewUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(previewImagePath)
+
+      console.log("🔗 Template URL:", templateUrl)
+      console.log("🔗 Preview URL:", previewUrl)
+
+      // Insert template to database
+      console.log("💾 Inserting template to database...")
+      const { data: newTemplate, error: insertError } = await supabase
+        .from("certificate_templates")
+        .insert({
+          name: formData.name,
+          category_id: formData.category_id,
+          orientation: formData.orientation,
+          background_url: templateUrl,
+          preview_url: previewUrl,
+          thumbnail_url: previewUrl,
+          template_source: "manual"
+        })
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error("❌ Database insert error:", insertError)
+        throw insertError
+      }
+
+      console.log("✅ Template created successfully:", newTemplate)
+      toast.success("Template created successfully!")
+      setCreateDialogOpen(false)
+      
+      // Reset form
+      setFormData({
+        name: "",
+        category_id: "",
+        orientation: "landscape",
+        template_image: null,
+        preview_image: null
+      })
+
+      // Refresh data
+      await fetchData()
+
+      // Redirect to Certificate Editor
+      console.log("🔄 Redirecting to editor with template ID:", newTemplate.id)
+      router.push(`/certificates/editor?template=${newTemplate.id}`)
+    } catch (error) {
+      console.error("❌ Error creating template:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to create template")
+    } finally {
+      setCreating(false)
     }
   }
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Are you sure you want to delete template "${name}"?`)) return
     
-    console.log("🗑️ Deleting template:", id)
-    
     try {
-      // Delete associated designs first (CASCADE should handle this, but being explicit)
-      const { error: designError } = await supabase
-        .from("certificate_designs")
-        .delete()
-        .eq("template_id", id)
+      console.log("🗑️ Deleting template:", { id, name })
       
-      if (designError) {
-        console.warn("⚠️ Design delete warning:", designError)
-      }
-      
-      // Delete template
       const { error } = await supabase
         .from("certificate_templates")
         .delete()
@@ -120,179 +222,300 @@ export default function TemplatesPage() {
       
       console.log("✅ Template deleted successfully")
       toast.success("Template deleted successfully")
-      fetchData()
+      
+      // Refresh data
+      await fetchData()
     } catch (error) {
-      console.error("Error deleting template:", error)
+      console.error("❌ Error deleting template:", error)
       toast.error(error instanceof Error ? error.message : "Failed to delete template")
     }
   }
 
   function getCategoryName(categoryId: string | null) {
-    if (!categoryId) return "-"
+    if (!categoryId) return "Uncategorized"
     const category = categories.find(c => c.id === categoryId)
-    return category?.name || "-"
+    return category?.name || "Uncategorized"
   }
 
-  const filteredTemplates = templates.filter(template =>
-    template.name.toLowerCase().includes(search.toLowerCase()) ||
-    getCategoryName(template.category_id).toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(search.toLowerCase()) ||
+      getCategoryName(template.category_id).toLowerCase().includes(search.toLowerCase())
+    const matchesCategory = selectedCategory === "all" || template.category_id === selectedCategory
+    return matchesSearch && matchesCategory
+  })
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Templates</h1>
-          <p className="text-muted-foreground">Manage certificate templates</p>
+    <div className="min-h-dvh w-full bg-[#0A0A0A] overflow-x-hidden">
+      <AppHeader />
+      <main className="max-w-screen-xl mx-auto px-6 md:px-12 py-6 mt-16">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Templates</h1>
+            <p className="text-white/60">Manage certificate templates</p>
+          </div>
+          
+          {isAdmin && (
+            <Button 
+              onClick={() => setCreateDialogOpen(true)}
+              className="bg-gradient-to-r from-[#3B82F6] to-[#06B6D4] hover:opacity-90 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Template
+            </Button>
+          )}
         </div>
-        
-        <Link href="/certificates/editor">
-          <Button className="bg-[#dc2626] hover:bg-[#b91c1c]">
-            <Plus className="w-4 h-4 mr-2" />
-            Create Template
-          </Button>
-        </Link>
-      </div>
 
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search templates by name or category..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-[#1a1a1a] border-[#333]"
-          />
+        {/* Search and Filter */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search template"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 bg-[#1a1a1a] border-[#333] text-white"
+            />
+          </div>
+          
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full md:w-[200px] bg-[#1a1a1a] border-[#333] text-white">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1a1a1a] border-[#333] text-white">
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
 
-      <Card className="bg-[#1a1a1a] border-[#333]">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-[#333] hover:bg-[#222]">
-              <TableHead className="text-white">Preview</TableHead>
-              <TableHead className="text-white">Name</TableHead>
-              <TableHead className="text-white">Orientation</TableHead>
-              <TableHead className="text-white">Category</TableHead>
-              <TableHead className="text-white">Fields</TableHead>
-              <TableHead className="text-white">Source</TableHead>
-              <TableHead className="text-white">Created</TableHead>
-              <TableHead className="text-white text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : filteredTemplates.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                  {search ? (
-                    "No templates found matching your search"
-                  ) : (
-                    <div className="space-y-2">
-                      <p>No templates found. Create your first template!</p>
-                      <Link href="/certificates/editor">
-                        <Button variant="outline" className="border-[#333] bg-transparent text-white hover:bg-[#333]">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create Template
-                        </Button>
-                      </Link>
+        {/* Templates Grid */}
+        {loading ? (
+          <div className="text-center text-white/60 py-12">Loading templates...</div>
+        ) : filteredTemplates.length === 0 ? (
+          <div className="text-center text-white/60 py-12">
+            <p className="mb-4">No templates found</p>
+            {isAdmin && (
+              <Button 
+                onClick={() => setCreateDialogOpen(true)}
+                variant="outline"
+                className="border-[#333] text-white hover:bg-[#333]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create your first template
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTemplates.map((template) => (
+              <Card key={template.id} className="bg-[#111] border-[#262626] overflow-hidden hover:border-[#333] transition-colors">
+                <CardContent className="p-0">
+                  {/* Template Preview Image */}
+                  <div className="relative w-full h-48 bg-[#1a1a1a]">
+                    {template.preview_url || template.thumbnail_url || template.background_url ? (
+                      <Image
+                        src={template.preview_url || template.thumbnail_url || template.background_url || ""}
+                        alt={template.name}
+                        fill
+                        className="object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-500">
+                        No preview
+                      </div>
+                    )}
+                    {/* Category Badge */}
+                    <div className="absolute top-2 right-2">
+                      <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-medium rounded-full">
+                        {getCategoryName(template.category_id)}
+                      </span>
                     </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTemplates.map((template) => (
-                <TableRow key={template.id} className="border-[#333] hover:bg-[#222]">
-                  <TableCell>
-                    <div className="w-20 h-14 relative bg-gray-800 rounded overflow-hidden">
-                      {template.preview_url || template.thumbnail_url || template.background_url ? (
-                        <Image
-                          src={template.preview_url || template.thumbnail_url || template.background_url || ""}
-                          alt={template.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                          No preview
+                  </div>
+
+                  {/* Template Info */}
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{template.name}</h3>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-white/60">
+                        {template.orientation === "landscape" ? (
+                          <><RectangleHorizontal className="w-4 h-4" /> Landscape</>
+                        ) : (
+                          <><RectangleVertical className="w-4 h-4" /> Portrait</>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => toast.info("Preview feature coming soon")}
+                        variant="outline"
+                        className="w-full border-[#333] text-white hover:bg-[#333]"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Preview
+                      </Button>
+                      
+                      <Button
+                        onClick={() => router.push(`/certificates/editor?template=${template.id}`)}
+                        className="w-full bg-gradient-to-r from-[#3B82F6] to-[#06B6D4] hover:opacity-90 text-white"
+                      >
+                        Use This Template
+                      </Button>
+
+                      {isAdmin && (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => router.push(`/admin/templates/${template.id}/editor`)}
+                            variant="outline"
+                            className="flex-1 border-[#333] text-white hover:bg-[#333]"
+                          >
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => handleDelete(template.id, template.name)}
+                            variant="outline"
+                            className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </Button>
                         </div>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell className="font-medium text-white">
-                    {template.name}
-                  </TableCell>
-                  <TableCell className="text-gray-400">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      template.orientation === 'landscape' 
-                        ? "bg-blue-500/20 text-blue-400" 
-                        : "bg-purple-500/20 text-purple-400"
-                    }`}>
-                      {template.orientation || "N/A"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-gray-400">
-                    {getCategoryName(template.category_id)}
-                  </TableCell>
-                  <TableCell className="text-gray-400">
-                    {template.fields?.length || 0} fields
-                  </TableCell>
-                  <TableCell className="text-gray-400">
-                    <span className="text-xs">
-                      {template.template_source || "N/A"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-gray-400">
-                    {new Date(template.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        // Preview template (could open in modal or new page)
-                        toast.info("Preview feature coming soon")
-                      }}
-                      className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        router.push(`/certificates/editor?template=${template.id}`)
-                      }}
-                      className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    {canDeleteTemplate && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(template.id, template.name)}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Card>
-      
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredTemplates.length} of {templates.length} templates
-      </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Create Template Dialog */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogContent className="bg-[#111] border-[#262626] text-white max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Create Template</DialogTitle>
+              <DialogDescription className="text-white/60">
+                Define the basic details of your template.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Template Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-white">Template Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Enter template name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="bg-[#1a1a1a] border-[#333] text-white focus:border-blue-500"
+                />
+              </div>
+
+              {/* Category */}
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-white">Category</Label>
+                <Select value={formData.category_id} onValueChange={(value) => setFormData({ ...formData, category_id: value })}>
+                  <SelectTrigger className="bg-[#1a1a1a] border-[#333] text-white">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a1a1a] border-[#333] text-white">
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Orientation */}
+              <div className="space-y-2">
+                <Label className="text-white">Orientation</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={formData.orientation === "landscape" ? "default" : "outline"}
+                    className={formData.orientation === "landscape" 
+                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      : "border-[#333] text-white hover:bg-[#333]"}
+                    onClick={() => setFormData({ ...formData, orientation: "landscape" })}
+                  >
+                    <RectangleHorizontal className="w-4 h-4 mr-2" />
+                    Landscape
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={formData.orientation === "portrait" ? "default" : "outline"}
+                    className={formData.orientation === "portrait" 
+                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                      : "border-[#333] text-white hover:bg-[#333]"}
+                    onClick={() => setFormData({ ...formData, orientation: "portrait" })}
+                  >
+                    <RectangleVertical className="w-4 h-4 mr-2" />
+                    Portrait
+                  </Button>
+                </div>
+              </div>
+
+              {/* Template Image */}
+              <div className="space-y-2">
+                <Label htmlFor="template-image" className="text-white">
+                  Template Image (Required) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="template-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFormData({ ...formData, template_image: e.target.files?.[0] || null })}
+                  className="bg-[#1a1a1a] border-[#333] text-white file:text-white"
+                />
+                {formData.template_image && (
+                  <p className="text-sm text-green-400">✓ {formData.template_image.name}</p>
+                )}
+              </div>
+
+              {/* Preview Image */}
+              <div className="space-y-2">
+                <Label htmlFor="preview-image" className="text-white">
+                  Preview Image (Thumbnail) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="preview-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFormData({ ...formData, preview_image: e.target.files?.[0] || null })}
+                  className="bg-[#1a1a1a] border-[#333] text-white file:text-white"
+                />
+                {formData.preview_image && (
+                  <p className="text-sm text-green-400">✓ {formData.preview_image.name}</p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setCreateDialogOpen(false)}
+                className="border-[#333] text-white hover:bg-[#333]"
+                disabled={creating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateTemplate}
+                className="bg-gradient-to-r from-[#3B82F6] to-[#06B6D4] hover:opacity-90 text-white"
+                disabled={creating}
+              >
+                {creating ? "Creating..." : "Create Template"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </main>
     </div>
   )
 }

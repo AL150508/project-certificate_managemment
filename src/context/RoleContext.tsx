@@ -42,7 +42,24 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // initial session fetch
+    // Check for fallback credentials first (from localStorage)
+    const fallbackRole = localStorage.getItem('fallback_role')
+    const fallbackUserStr = localStorage.getItem('fallback_user')
+    
+    if (fallbackRole && fallbackUserStr) {
+      try {
+        const fallbackUser = JSON.parse(fallbackUserStr)
+        console.log('✅ Found fallback role in localStorage:', fallbackRole)
+        setRole(fallbackRole as Role)
+        setOriginalRole(fallbackRole as Role)
+        setUser({ id: 'fallback', email: fallbackUser.email })
+        return // Don't check Supabase if using fallback
+      } catch (e) {
+        console.error('Failed to parse fallback user:', e)
+      }
+    }
+    
+    // initial session fetch from Supabase
     supabase.auth.getSession().then(async ({ data }) => {
       const s = data.session
       if (s?.user) {
@@ -55,6 +72,24 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     })
     // subscribe to auth state
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+      // Check fallback first
+      const fallbackRole = localStorage.getItem('fallback_role')
+      const fallbackUserStr = localStorage.getItem('fallback_user')
+      
+      if (fallbackRole && fallbackUserStr) {
+        // User is using fallback credentials, don't override with Supabase state
+        try {
+          const fallbackUser = JSON.parse(fallbackUserStr)
+          setRole(fallbackRole as Role)
+          setOriginalRole(fallbackRole as Role)
+          setUser({ id: 'fallback', email: fallbackUser.email })
+        } catch (e) {
+          console.error('Failed to parse fallback user:', e)
+        }
+        return
+      }
+      
+      // Normal Supabase auth flow
       if (sess?.user) {
         setUser({ id: sess.user.id, email: sess.user.email ?? "" })
         await resolveRoleByEmail(sess.user.email)
@@ -64,6 +99,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         setOriginalRole("public")
         // Clear role override on logout
         localStorage.removeItem('admin_role_override')
+        localStorage.removeItem('fallback_role')
+        localStorage.removeItem('fallback_user')
       }
     })
     return () => { sub.subscription.unsubscribe() }
