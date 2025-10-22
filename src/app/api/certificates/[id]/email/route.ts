@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
-import { supabaseServer as supabase } from "@/lib/supabase-server"
+import { supabaseServer as supabase, validateSupabaseServer } from "@/lib/supabase-server"
 
 function getBaseUrl() {
   const envUrl = process.env.NEXT_PUBLIC_PUBLIC_BASE_URL
@@ -19,6 +19,7 @@ async function getTransporter() {
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   try {
+    validateSupabaseServer()
     const { data: cert, error } = await supabase
       .from("certificates")
       .select("id, certificate_number, verification_code, pdf_url, member_id, category_id")
